@@ -1,0 +1,769 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>OpenClaw 安装器</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;user-select:none}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2d2d3f;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#4a4a6a}
+body{font-family:-apple-system,BlinkMacSystemFont,'Microsoft YaHei','Segoe UI',sans-serif;background:#0f0f1a;color:#e2e8f0;min-height:100vh;overflow:hidden;display:flex;flex-direction:column}
+.titlebar{height:38px;background:#0a0a14;display:flex;align-items:center;justify-content:space-between;padding:0 0 0 16px;-webkit-app-region:drag;flex-shrink:0;border-bottom:1px solid #1a1a2a}
+.titlebar-left{display:flex;align-items:center;gap:8px;font-size:12px;color:#64748b}
+.titlebar-left svg{width:16px;height:16px}
+.titlebar-btns{display:flex;-webkit-app-region:no-drag;height:100%}
+.tb{width:46px;height:100%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s}
+.tb svg{width:16px;height:16px;stroke:#94a3b8;fill:none;stroke-width:1.5}
+.tb:hover{background:#1e1e2e}
+.tb:hover svg{stroke:#e2e8f0}
+.tb-close:hover{background:#e81123}
+.tb-close:hover svg{stroke:white}
+.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:20px 40px 20px;overflow-y:auto;overflow-x:hidden}
+.logo{text-align:center;margin-bottom:16px}
+.logo svg{width:48px;height:48px}
+.logo h1{font-size:20px;font-weight:700;margin-top:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo p{color:#64748b;font-size:12px;margin-top:3px}
+.steps{display:flex;align-items:center;margin-bottom:18px;justify-content:center}
+.step-item{display:flex;flex-direction:column;align-items:center;gap:3px}
+.step-circle{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:#1e1e2e;border:2px solid #2d2d3f;color:#4a4a6a;transition:all .3s}
+.step-circle.active{border-color:#6366f1;color:#6366f1;background:#1a1a2e}
+.step-circle.done{background:#10b981;border-color:#10b981;color:white}
+.step-label{font-size:10px;color:#4a4a6a;white-space:nowrap}
+.step-label.active{color:#94a3b8}
+.step-line{width:40px;height:2px;background:#2d2d3f;margin:0 6px;margin-bottom:14px;transition:background .3s}
+.step-line.done{background:#10b981}
+.page{width:100%;display:none;flex-direction:column;gap:12px}
+.page.active{display:flex}
+.form-group{display:flex;flex-direction:column;gap:5px}
+label{font-size:12px;color:#94a3b8;font-weight:500;display:flex;align-items:center;gap:6px}
+label svg{width:14px;height:14px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hint{font-size:11px;color:#4a4a6a}
+input,select{background:#1e1e2e;border:1px solid #2d2d3f;border-radius:8px;padding:10px 12px;color:#e2e8f0;font-size:13px;outline:none;transition:border-color .2s;width:100%;font-family:inherit;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{border-color:#6366f1}
+input::placeholder{color:#3a3a5a}
+input.input-error{border-color:#f87171}
+select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+select option{background:#1e1e2e;color:#e2e8f0}
+.provider-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pcard{background:#1e1e2e;border:2px solid #2d2d3f;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:5px}
+.pcard:hover{border-color:#4a4a6a;background:#252538}
+.pcard.selected{border-color:#6366f1;background:#1a1a2e;box-shadow:0 0 12px rgba(99,102,241,.15)}
+.pcard .picon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white}
+.pcard span{font-size:10px;color:#94a3b8;font-weight:500}
+.pcard.selected span{color:#e2e8f0}
+.input-row{display:flex;gap:8px;align-items:flex-end}
+.input-row .form-group{flex:1}
+.pwd-wrap{position:relative;flex:1}
+.pwd-wrap input{width:100%;padding-right:38px}
+.pwd-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:2px;display:flex;align-items:center}
+.pwd-toggle svg{width:16px;height:16px;stroke:#4a4a6a;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pwd-toggle:hover svg{stroke:#94a3b8}
+.ibtn{height:38px;padding:0 14px;border-radius:8px;border:1px solid #2d2d3f;background:#1e1e2e;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;transition:all .15s;flex-shrink:0;font-family:inherit}
+.ibtn:hover{border-color:#6366f1;color:#e2e8f0}
+.ibtn:disabled{opacity:.4;cursor:not-allowed}
+.ibtn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.model-loading{font-size:11px;color:#64748b;padding:4px 0;display:flex;align-items:center;gap:6px}
+.btn{width:100%;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-success{background:linear-gradient(135deg,#10b981,#059669);color:white}
+.btn-success:hover{opacity:.9;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid #2d2d3f;color:#94a3b8;padding:10px;font-size:12px}
+.btn-outline:hover{border-color:#6366f1;color:#e2e8f0}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+.progress-wrap{background:#0a0a14;border-radius:6px;height:5px;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:6px;transition:width .6s ease;width:0%}
+.install-steps{display:flex;flex-direction:column;gap:3px}
+.install-step{display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:8px;font-size:12px;color:#3a3a5a;transition:all .3s}
+.install-step.active{color:#e2e8f0;background:#1e1e2e}
+.install-step.done{color:#10b981}
+.install-step.error{color:#f87171}
+.install-step .icon{width:16px;height:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.install-step .icon svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.terminal{background:#0a0a14;border:1px solid #1e1e2e;border-radius:8px;padding:8px 10px;height:110px;overflow-y:auto;font-family:'Consolas','Courier New',monospace;font-size:11px;color:#4a4a6a}
+.terminal .tline{margin-bottom:1px;line-height:1.4}
+.terminal .tline.new{color:#64748b}
+.terminal .tline.err{color:#f87171}
+.error-banner{background:#2d0a0a;border:1px solid #7f1d1d;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#f87171}
+.error-banner svg{width:18px;height:18px;flex-shrink:0;stroke:#f87171;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.done-icon{text-align:center;margin-bottom:6px}
+.done-icon svg{width:52px;height:52px}
+.done-title{text-align:center;font-size:17px;font-weight:700;margin-bottom:3px}
+.done-sub{text-align:center;font-size:12px;color:#64748b;margin-bottom:6px}
+.info-box{background:#1e1e2e;border:1px solid #2d2d3f;border-radius:8px;padding:10px 12px}
+.info-box+.info-box{margin-top:4px}
+.info-box .ib-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.info-box .ib-row svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.info-box .ib-label{font-size:11px;color:#4a4a6a}
+.info-box .ib-val{font-size:12px;color:#6366f1;font-family:monospace;word-break:break-all;display:flex;align-items:center;gap:6px}
+.info-box .ib-val.green{color:#10b981}
+.copy-btn{background:none;border:1px solid #2d2d3f;border-radius:4px;padding:2px 6px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#64748b;transition:all .15s;font-family:inherit}
+.copy-btn:hover{border-color:#6366f1;color:#e2e8f0}
+.copy-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.env-box{background:#1e1e2e;border:1px solid #2d2d3f;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.env-row{display:flex;justify-content:space-between;font-size:11px}
+.env-row .ek{color:#64748b}
+.env-row .ev{color:#e2e8f0;font-family:monospace}
+.env-row .ev.ok{color:#10b981}
+.env-row .ev.warn{color:#f59e0b}
+.api-status{font-size:11px;padding:6px 10px;border-radius:6px;text-align:center;transition:all .3s}
+.api-status.success{background:#052e16;color:#10b981;border:1px solid #065f46}
+.api-status.error{background:#2d0a0a;color:#f87171;border:1px solid #7f1d1d}
+.dir-error{font-size:11px;color:#f87171;padding:2px 0}
+.manage-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mcard{background:#1e1e2e;border:1px solid #2d2d3f;border-radius:8px;padding:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px}
+.mcard:hover{border-color:#6366f1;background:#252538}
+.mcard svg{width:20px;height:20px;stroke:#6366f1;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.mcard .mc-text{display:flex;flex-direction:column;gap:1px}
+.mcard .mc-title{font-size:12px;font-weight:600;color:#e2e8f0}
+.mcard .mc-desc{font-size:10px;color:#64748b}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{animation:spin 1s linear infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.pulse{animation:pulse 1.5s ease-in-out infinite}
+</style>
+</head>
+<body>
+<div class="titlebar">
+  <div class="titlebar-left">
+    <img src="brand-logo.png" alt="" style="width:16px;height:16px;border-radius:3px">
+    OpenClaw 安装器 <span style="color:#4a4a6a;font-size:11px" id="titleVersion">v1.0.0</span>
+  </div>
+  <div class="titlebar-btns">
+    <button class="tb" onclick="api.minimize()" title="最小化"><svg viewBox="0 0 24 24"><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
+    <button class="tb" onclick="api.maximize()" id="maxBtn" title="最大化"><svg viewBox="0 0 24 24" id="maxIcon"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+    <button class="tb tb-close" onclick="api.close()" title="关闭"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>
+  </div>
+</div>
+<div class="main">
+  <div class="logo">
+    <img src="brand-logo.png" alt="OpenClaw" style="width:56px;height:56px;border-radius:14px;margin:0 auto;display:block;box-shadow:0 4px 16px rgba(99,102,241,.25)">
+    <h1>OpenClaw</h1>
+    <p>AI 智能助手 · 一键部署</p>
+  </div>
+  <div class="steps">
+    <div class="step-item"><div class="step-circle active" id="sc1">1</div><div class="step-label active" id="sl1">选择平台</div></div>
+    <div class="step-line" id="line1"></div>
+    <div class="step-item"><div class="step-circle" id="sc2">2</div><div class="step-label" id="sl2">配置</div></div>
+    <div class="step-line" id="line2"></div>
+    <div class="step-item"><div class="step-circle" id="sc3">3</div><div class="step-label" id="sl3">安装</div></div>
+    <div class="step-line" id="line3"></div>
+    <div class="step-item"><div class="step-circle" id="sc4">4</div><div class="step-label" id="sl4">完成</div></div>
+  </div>
+
+  <!-- Page 1: 选择 Provider -->
+  <div class="page active" id="page1">
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:2px">选择你的 AI 服务商：</div>
+    <div class="provider-cards">
+      <div class="pcard" onclick="selectProvider('deepseek')" id="p-deepseek">
+        <div class="picon" style="background:linear-gradient(135deg,#0A6CFF,#0052CC)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2 2"/></svg>
+        </div>
+        <span>DeepSeek</span>
+      </div>
+      <div class="pcard" onclick="selectProvider('openai')" id="p-openai">
+        <div class="picon" style="background:linear-gradient(135deg,#10a37f,#0d8c6d)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="1.8"><path d="M12 2a7 7 0 0 1 6.93 6.06A5 5 0 0 1 18 18h-1.5M6 18a5 5 0 0 1-.93-9.94A7 7 0 0 1 12 2"/><path d="M12 12v6m-3-3l3 3 3-3"/></svg>
+        </div>
+        <span>OpenAI</span>
+      </div>
+      <div class="pcard" onclick="selectProvider('claude')" id="p-claude">
+        <div class="picon" style="background:linear-gradient(135deg,#D97706,#B45309)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M12 3L4 9v6l8 6 8-6V9l-8-6z"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <span>Claude</span>
+      </div>
+      <div class="pcard" onclick="selectProvider('qwen')" id="p-qwen">
+        <div class="picon" style="background:linear-gradient(135deg,#6236FF,#4318D1)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M12 7v5l3 3"/></svg>
+        </div>
+        <span>通义千问</span>
+      </div>
+      <div class="pcard" onclick="selectProvider('zhipu')" id="p-zhipu">
+        <div class="picon" style="background:linear-gradient(135deg,#3B82F6,#1D4ED8)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+        </div>
+        <span>智谱 GLM</span>
+      </div>
+      <div class="pcard" onclick="selectProvider('kimi')" id="p-kimi">
+        <div class="picon" style="background:linear-gradient(135deg,#1a1a2e,#0f0f1a);border:1px solid #333">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </div>
+        <span>Kimi</span>
+      </div>
+      <div class="pcard" onclick="selectProvider('siliconflow')" id="p-siliconflow">
+        <div class="picon" style="background:linear-gradient(135deg,#8B5CF6,#6D28D9)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <span>硅基流动</span>
+      </div>
+      <div class="pcard" onclick="selectProvider('doubao')" id="p-doubao">
+        <div class="picon" style="background:linear-gradient(135deg,#00D4AA,#00A385)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6a6 6 0 0 1 6 6"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
+        <span>豆包</span>
+      </div>
+      <div class="pcard" onclick="selectProvider('custom')" id="p-custom">
+        <div class="picon" style="background:linear-gradient(135deg,#6366f1,#4F46E5)">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+        <span>自定义</span>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="nextBtn1" onclick="goPage2()" disabled>
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg> 下一步
+    </button>
+  </div>
+
+  <!-- Page 2: 配置 -->
+  <div class="page" id="page2">
+    <div class="form-group" id="baseUrlGroup">
+      <label><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> API 地址</label>
+      <input type="url" id="apiBase" placeholder="https://api.deepseek.com/v1" />
+      <div class="hint" id="baseUrlHint"></div>
+    </div>
+    <div class="form-group">
+      <label><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> API 密钥</label>
+      <div class="input-row">
+        <div class="pwd-wrap">
+          <input type="password" id="apiKey" placeholder="sk-xxxxxxxxxxxxxxxx" />
+          <button class="pwd-toggle" onclick="togglePwd()" title="显示/隐藏密钥">
+            <svg viewBox="0 0 24 24" id="eyeIcon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <button class="ibtn" onclick="testAndFetch()" id="fetchBtn">
+          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          验证
+        </button>
+      </div>
+      <div class="hint">填入你从服务商获取的 API Key，点击「验证」测试连通性</div>
+    </div>
+    <div class="form-group">
+      <label><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> 模型</label>
+      <select id="modelSelect"><option value="">-- 请先选择服务商 --</option></select>
+      <div id="modelStatus"></div>
+      <input type="text" id="modelCustom" placeholder="或手动输入模型名称（如 gpt-4o）" style="margin-top:4px;font-size:12px" />
+    </div>
+    <div class="form-group">
+      <label><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> 安装目录</label>
+      <div class="input-row">
+        <input type="text" id="installDir" readonly style="flex:1;cursor:pointer" />
+        <button class="ibtn" onclick="browseDir()">
+          <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg> 浏览
+        </button>
+      </div>
+      <div id="dirError" class="dir-error"></div>
+      <div class="hint">默认安装到用户目录，无需管理员权限</div>
+    </div>
+    <div id="apiStatus"></div>
+    <div class="env-box" id="envBox" style="display:none"></div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="showPage(1)">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg> 上一步
+      </button>
+      <button class="btn btn-primary" id="installBtn" onclick="startInstall()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        开始安装
+      </button>
+    </div>
+  </div>
+
+  <!-- Page 3: 安装进度 -->
+  <div class="page" id="page3">
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <div class="install-steps">
+      <div class="install-step" id="is1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>准备工作目录</div>
+      <div class="install-step" id="is2"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>写入配置文件</div>
+      <div class="install-step" id="is3"><span class="icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>安装 OpenClaw 核心</div>
+      <div class="install-step" id="is4"><span class="icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>启动 Gateway 服务</div>
+      <div class="install-step" id="is5"><span class="icon"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>安装完成</div>
+    </div>
+    <div class="terminal" id="terminal"></div>
+    <div id="installError" style="display:none"></div>
+  </div>
+
+  <!-- Page 4: 安装完成 -->
+  <div class="page" id="page4">
+    <div class="done-icon">
+      <svg viewBox="0 0 56 56" fill="none"><circle cx="28" cy="28" r="26" fill="#052e16" stroke="#10b981" stroke-width="2"/><path d="M17 28l7 7 15-15" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="done-title">安装完成！</div>
+    <div class="done-sub">OpenClaw 已在你的电脑上运行</div>
+    <div class="info-box">
+      <div class="ib-row"><svg viewBox="0 0 24 24" stroke="#6366f1"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><div class="ib-label">访问地址</div></div>
+      <div class="ib-val"><span id="doneUrl"></span><button class="copy-btn" onclick="copyText('doneUrl',this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制</button></div>
+    </div>
+    <div class="info-box">
+      <div class="ib-row"><svg viewBox="0 0 24 24" stroke="#10b981"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><div class="ib-label">Gateway 令牌（请妥善保存）</div></div>
+      <div class="ib-val green"><span id="doneToken" style="word-break:break-all"></span><button class="copy-btn" onclick="copyText('doneToken',this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制</button></div>
+    </div>
+    <button class="btn btn-success" onclick="launchFromDone()" id="doneOpenBtn" style="margin-top:8px">
+      <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      启动 OpenClaw 并打开浏览器
+    </button>
+    <button class="btn btn-outline" onclick="showDashboard()" style="margin-top:4px">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      进入管理面板
+    </button>
+  </div>
+
+  <!-- Page 5: 管理面板（已安装用户直接进入） -->
+  <div class="page" id="page5">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <img src="brand-logo.png" alt="OpenClaw" style="width:36px;height:36px;border-radius:10px;box-shadow:0 2px 8px rgba(99,102,241,.2)">
+        <div>
+          <div style="font-size:16px;font-weight:700">OpenClaw</div>
+          <div style="font-size:11px;color:#64748b" id="dashVersion">v1.0.0</div>
+        </div>
+      </div>
+      <div id="dashStatus" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:600;background:#052e16;color:#10b981;border:1px solid #065f46">
+        <span style="width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block"></span>
+        检测中...
+      </div>
+    </div>
+
+    <!-- 一键启动大按钮 -->
+    <button class="btn btn-success" onclick="launchOpenClaw()" id="dashLaunchBtn" style="height:52px;font-size:16px;margin-bottom:8px">
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px"><polygon points="5 3 19 12 5 21 5 3" fill="white" stroke="none"/></svg>
+      启动 OpenClaw
+    </button>
+
+    <!-- 信息卡片 -->
+    <div class="info-box">
+      <div class="ib-row"><svg viewBox="0 0 24 24" stroke="#6366f1"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><div class="ib-label">访问地址</div></div>
+      <div class="ib-val"><span id="dashUrl">-</span></div>
+    </div>
+    <div class="info-box">
+      <div class="ib-row"><svg viewBox="0 0 24 24" stroke="#6366f1"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><div class="ib-label">安装目录</div></div>
+      <div class="ib-val" style="font-size:11px"><span id="dashDir">-</span></div>
+    </div>
+
+    <!-- 快捷操作 -->
+    <div style="font-size:12px;color:#64748b;margin-top:8px;margin-bottom:4px">快捷操作</div>
+    <div class="manage-cards">
+      <div class="mcard" onclick="dashOpenWebchat()">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <div class="mc-text"><div class="mc-title">打开 WebChat</div><div class="mc-desc">浏览器对话</div></div>
+      </div>
+      <div class="mcard" onclick="dashOpenDir()">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <div class="mc-text"><div class="mc-title">安装目录</div><div class="mc-desc">查看文件</div></div>
+      </div>
+      <div class="mcard" onclick="dashOpenConfig()">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <div class="mc-text"><div class="mc-title">编辑配置</div><div class="mc-desc">openclaw.json</div></div>
+      </div>
+      <div class="mcard" onclick="openDocs()">
+        <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <div class="mc-text"><div class="mc-title">查看文档</div><div class="mc-desc">docs.openclaw.ai</div></div>
+      </div>
+    </div>
+
+    <!-- 底部操作 -->
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn btn-outline" onclick="dashStopGateway()" id="dashStopBtn" style="flex:1">
+        <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        停止 Gateway
+      </button>
+      <button class="btn btn-outline" onclick="dashReinstall()" style="flex:1;color:#f59e0b;border-color:#f59e0b33">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        重新安装
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+const PROVIDERS = {
+  deepseek:{name:'DeepSeek',baseUrl:'https://api.deepseek.com/v1',type:'openai',api:'openai-completions',
+    models:['deepseek-chat','deepseek-reasoner'],
+    hint:'在 platform.deepseek.com 获取 API Key'},
+  openai:{name:'OpenAI',baseUrl:'https://api.openai.com/v1',type:'openai',api:'openai-responses',
+    models:['gpt-4o','gpt-4o-mini','gpt-4-turbo','o1-mini','o1-preview','o3-mini','gpt-3.5-turbo'],
+    hint:'在 platform.openai.com 获取 API Key（需科学上网）'},
+  claude:{name:'Claude',baseUrl:'https://api.anthropic.com/v1',type:'anthropic',api:'anthropic-messages',
+    models:['claude-sonnet-4-20250514','claude-3-5-sonnet-20241022','claude-3-5-haiku-20241022','claude-3-opus-20240229'],
+    hint:'在 console.anthropic.com 获取 API Key（需科学上网）'},
+  qwen:{name:'通义千问',baseUrl:'https://dashscope.aliyuncs.com/compatible-mode/v1',type:'openai',api:'openai-completions',
+    models:['qwen-max','qwen-plus','qwen-turbo','qwen-long','qwen-vl-max','qwen-vl-plus'],
+    hint:'在 bailian.console.aliyun.com 获取 API Key'},
+  zhipu:{name:'智谱 GLM',baseUrl:'https://open.bigmodel.cn/api/paas/v4',type:'openai',api:'openai-completions',
+    models:['glm-4-plus','glm-4','glm-4-long','glm-4-flash','glm-4v-plus','glm-4v'],
+    hint:'在 open.bigmodel.cn 获取 API Key'},
+  kimi:{name:'Kimi',baseUrl:'https://api.moonshot.cn/v1',type:'openai',api:'openai-completions',
+    models:['moonshot-v1-128k','moonshot-v1-32k','moonshot-v1-8k'],
+    hint:'在 platform.moonshot.cn 获取 API Key'},
+  siliconflow:{name:'硅基流动',baseUrl:'https://api.siliconflow.cn/v1',type:'openai',api:'openai-completions',
+    models:['deepseek-ai/DeepSeek-V3','deepseek-ai/DeepSeek-R1','Qwen/Qwen2.5-72B-Instruct','Pro/deepseek-ai/DeepSeek-V3'],
+    hint:'在 cloud.siliconflow.cn 获取 API Key，支持多种开源模型'},
+  doubao:{name:'豆包',baseUrl:'https://ark.cn-beijing.volces.com/api/v3',type:'openai',api:'openai-completions',
+    models:['doubao-pro-256k','doubao-pro-128k','doubao-pro-32k','doubao-lite-128k','doubao-lite-32k'],
+    hint:'在 console.volcengine.com 获取 API Key（火山引擎）'},
+  custom:{name:'自定义',baseUrl:'',type:'openai',api:'openai-completions',models:[],
+    hint:'填入任何兼容 OpenAI 格式的 API 地址'}
+}
+let selectedProvider=null, installDirPath='', finalUrl='', finalToken='', finalInstallDir=''
+const PROGRESS={1:15,2:35,3:65,4:85,5:100}
+let currentStep=0, installFailed=false
+
+api.onMaximized((isMax) => {
+  const icon = document.getElementById('maxIcon')
+  if (isMax) icon.innerHTML = '<path d="M8 4h8a2 2 0 0 1 2 2v8"/><rect x="4" y="8" width="12" height="12" rx="1"/>'
+  else icon.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="1"/>'
+})
+
+let dashInfo = null // 管理面板用的安装信息
+let statusTimer = null
+
+window.addEventListener('DOMContentLoaded', async () => {
+  // 启动时检测是否已安装
+  const result = await api.checkInstall()
+  if (result.installed) {
+    // 已安装 → 直接进管理面板
+    dashInfo = result
+    showDashboard()
+    return
+  }
+  // 未安装 → 正常安装流程
+  const info = await api.detectEnvironment()
+  installDirPath = 'C:\\ProgramData\\openclaw'
+  document.getElementById('installDir').value = installDirPath
+  detectEnv()
+})
+
+async function detectEnv() {
+  const info = await api.detectEnvironment()
+  const box = document.getElementById('envBox')
+  box.style.display = 'flex'
+  let rows = ''
+  rows += mkRow('操作系统', info.os, 'ok')
+  rows += mkRow('内存', info.memory, parseFloat(info.memory)>=2?'ok':'warn')
+  rows += mkRow('磁盘剩余', info.diskFree||'N/A', info.diskFree&&parseFloat(info.diskFree)>=1?'ok':'warn')
+  rows += mkRow('Node.js', info.nodeBuiltin?'内置 '+info.nodeVersion:(info.nodeSystem||'未检测到'), info.nodeVersion?'ok':'warn')
+  box.innerHTML = '<div style="font-size:11px;color:#64748b;margin-bottom:2px;display:flex;align-items:center;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> 系统环境</div>' + rows
+}
+function mkRow(k,v,c){return '<div class="env-row"><span class="ek">'+k+'</span><span class="ev '+c+'">'+v+'</span></div>'}
+
+function selectProvider(id) {
+  selectedProvider=id
+  document.querySelectorAll('.pcard').forEach(c=>c.classList.remove('selected'))
+  document.getElementById('p-'+id).classList.add('selected')
+  document.getElementById('nextBtn1').disabled=false
+}
+
+function togglePwd(){
+  const inp=document.getElementById('apiKey')
+  const icon=document.getElementById('eyeIcon')
+  if(inp.type==='password'){
+    inp.type='text'
+    icon.innerHTML='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+  } else {
+    inp.type='password'
+    icon.innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'
+  }
+}
+
+function goPage2() {
+  if(!selectedProvider)return
+  const p=PROVIDERS[selectedProvider]
+  const base=document.getElementById('apiBase')
+  base.value=p.baseUrl
+  base.readOnly=selectedProvider!=='custom'
+  base.style.opacity=selectedProvider==='custom'?'1':'0.7'
+  document.getElementById('baseUrlHint').textContent=p.hint||''
+  const sel=document.getElementById('modelSelect')
+  if(p.models.length>0){
+    sel.innerHTML='<option value="">-- 请选择模型 --</option>'
+    p.models.forEach(m=>{sel.innerHTML+='<option value="'+m+'">'+m+'</option>'})
+  } else {
+    sel.innerHTML='<option value="">-- 填入 API Key 后点击「验证」获取 --</option>'
+  }
+  document.getElementById('apiStatus').innerHTML=''
+  document.getElementById('modelStatus').innerHTML=''
+  showPage(2)
+}
+
+async function testAndFetch(){
+  const apiBase=document.getElementById('apiBase').value.trim()
+  const apiKey=document.getElementById('apiKey').value.trim()
+  if(!apiBase){showApiStatus('error','请填写 API 地址');return}
+  if(!apiKey){showApiStatus('error','请填写 API 密钥');return}
+  const btn=document.getElementById('fetchBtn')
+  btn.disabled=true
+  showApiStatus('','<span class="pulse" style="color:#64748b">正在验证连接...</span>')
+  const testResult=await api.testApi({apiBase,apiKey})
+  if(!testResult.success){
+    btn.disabled=false
+    showApiStatus('error','连接失败：'+testResult.message)
+    return
+  }
+  showApiStatus('success','API 连接成功')
+  document.getElementById('modelStatus').innerHTML='<div class="model-loading"><svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> 正在获取模型列表...</div>'
+  const r=await api.fetchModels({apiBase,apiKey})
+  btn.disabled=false
+  if(r.success&&r.models.length>0){
+    const sel=document.getElementById('modelSelect')
+    sel.innerHTML='<option value="">-- 共 '+r.models.length+' 个模型可用 --</option>'
+    r.models.forEach(m=>{sel.innerHTML+='<option value="'+m+'">'+m+'</option>'})
+    document.getElementById('modelStatus').innerHTML='<div class="api-status success">已获取 '+r.models.length+' 个模型</div>'
+  } else if(r.success){
+    document.getElementById('modelStatus').innerHTML='<div style="font-size:11px;color:#f59e0b;padding:4px 0">未返回模型列表，请手动输入模型名称</div>'
+  } else {
+    document.getElementById('modelStatus').innerHTML='<div style="font-size:11px;color:#f59e0b;padding:4px 0">获取模型列表失败，请手动输入模型名称</div>'
+  }
+}
+
+function showApiStatus(type,html){
+  const el=document.getElementById('apiStatus')
+  if(!type)el.innerHTML=html
+  else el.innerHTML='<div class="api-status '+type+'">'+html+'</div>'
+}
+
+async function browseDir() {
+  const dir=await api.selectDirectory(installDirPath)
+  if(dir){installDirPath=dir;document.getElementById('installDir').value=dir;document.getElementById('dirError').textContent=''}
+}
+
+function getModel(){
+  return document.getElementById('modelCustom').value.trim()||document.getElementById('modelSelect').value||''
+}
+
+function copyText(id,el){
+  const text=document.getElementById(id).textContent
+  api.copyToClipboard(text).then(()=>{
+    const btn=el
+    const orig=btn.innerHTML
+    btn.innerHTML='<svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:#10b981;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg>已复制'
+    btn.style.borderColor='#10b981';btn.style.color='#10b981'
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.borderColor='';btn.style.color=''},1500)
+  })
+}
+
+function showPage(n) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+  document.getElementById('page'+n).classList.add('active')
+  for(let i=1;i<=4;i++){
+    const sc=document.getElementById('sc'+i),sl=document.getElementById('sl'+i)
+    sc.className='step-circle'+(i<n?' done':i===n?' active':'')
+    sl.className='step-label'+(i===n?' active':'')
+    if(i<n)sc.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg>'
+    else sc.textContent=i
+  }
+  for(let i=1;i<=3;i++){const ln=document.getElementById('line'+i);if(ln)ln.className='step-line'+(i<n?' done':'')}
+}
+
+function setInstallStep(n){
+  if(currentStep>0){const el=document.getElementById('is'+currentStep);if(el)el.className='install-step done'}
+  currentStep=n
+  const el=document.getElementById('is'+n);if(el)el.className='install-step active'
+  document.getElementById('progressBar').style.width=PROGRESS[n]+'%'
+}
+
+function addLog(text,isErr){
+  if(!text||!text.trim())return
+  const t=document.getElementById('terminal')
+  const line=document.createElement('div')
+  line.className='tline new'+(isErr?' err':'')
+  line.textContent=text.slice(0,200)
+  t.appendChild(line);t.scrollTop=t.scrollHeight
+  setTimeout(()=>line.classList.remove('new'),600)
+}
+
+function showInstallError(msg){
+  installFailed=true
+  const el=document.getElementById('installError')
+  el.style.display='flex'
+  el.style.flexDirection='column'
+  el.style.gap='8px'
+  el.innerHTML='<div class="error-banner"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>'+msg+'</span></div><div class="btn-row"><button class="btn btn-outline" onclick="goBackFromError()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg> 返回配置</button><button class="btn btn-primary" onclick="retryInstall()"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 重试</button></div>'
+}
+
+function goBackFromError(){
+  installFailed=false
+  document.getElementById('installError').style.display='none'
+  document.getElementById('installBtn').disabled=false
+  for(let i=1;i<=5;i++){const el=document.getElementById('is'+i);if(el)el.className='install-step'}
+  currentStep=0
+  document.getElementById('progressBar').style.width='0%'
+  document.getElementById('terminal').innerHTML=''
+  showPage(2)
+}
+
+function retryInstall(){
+  installFailed=false
+  document.getElementById('installError').style.display='none'
+  for(let i=1;i<=5;i++){const el=document.getElementById('is'+i);if(el)el.className='install-step'}
+  currentStep=0
+  document.getElementById('progressBar').style.width='0%'
+  document.getElementById('terminal').innerHTML=''
+  doInstall()
+}
+
+let progressListening=false
+async function startInstall(){
+  const apiBase=document.getElementById('apiBase').value.trim()
+  const apiKey=document.getElementById('apiKey').value.trim()
+  const model=getModel()
+  if(!apiBase||!apiKey){showApiStatus('error','请填写 API 地址和密钥');return}
+  if(!model){showApiStatus('error','请选择或输入模型名称');return}
+  const v=await api.validateInstallDir(installDirPath)
+  if(!v.valid){document.getElementById('dirError').textContent=v.error;return}
+  document.getElementById('dirError').textContent=''
+  document.getElementById('installBtn').disabled=true
+  showPage(3)
+  doInstall()
+}
+
+function doInstall(){
+  if(!progressListening){
+    progressListening=true
+    api.onProgress((data)=>{
+      if(data.type==='log'){addLog(data.text);if(data.step)setInstallStep(data.step)}
+      else if(data.type==='done'){
+        setInstallStep(5)
+        try{const info=JSON.parse(data.text);finalUrl=info.url;finalToken=info.token;finalInstallDir=info.installDir||'';
+          dashInfo={url:info.url,token:info.token,port:info.port,installDir:info.installDir,installed:true}
+        }catch(e){finalUrl=data.text}
+        setTimeout(()=>{
+          showPage(4)
+          document.getElementById('doneUrl').textContent=finalUrl
+          document.getElementById('doneToken').textContent=finalToken
+        },800)
+      }else if(data.type==='error'){
+        addLog(data.text,true)
+        if(currentStep>0){const el=document.getElementById('is'+currentStep);if(el)el.className='install-step error'}
+        showInstallError(data.text)
+      }
+    })
+  }
+  const apiBase=document.getElementById('apiBase').value.trim()
+  const apiKey=document.getElementById('apiKey').value.trim()
+  const model=getModel()
+  const providerType = selectedProvider ? (PROVIDERS[selectedProvider].type || 'openai') : 'openai'
+  const providerApi = selectedProvider ? (PROVIDERS[selectedProvider].api || 'openai-completions') : 'openai-completions'
+  api.startInstall({apiBase,apiKey,model,installDir:installDirPath,providerType,providerApi})
+}
+
+function openClaw(){
+  if (dashInfo) { api.openWebchat(dashInfo); return }
+  const url=finalUrl+'/#token='+finalToken
+  api.openUrl(url)
+}
+function openInstallDir(){api.openFolder(finalInstallDir||installDirPath)}
+function openConfig(){
+  const configPath=(finalInstallDir||installDirPath)+'\\openclaw.json'
+  api.openFile(configPath)
+}
+function openDocs(){api.openUrl('https://docs.openclaw.ai')}
+
+// ─── 安装完成页：启动并打开浏览器 ───
+async function launchFromDone() {
+  const btn = document.getElementById('doneOpenBtn')
+  btn.disabled = true
+  btn.innerHTML = '<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> 正在启动...'
+  const info = { port: parseInt(finalUrl.split(':').pop()) || 18789, token: finalToken, installDir: finalInstallDir || installDirPath }
+  const result = await api.openWebchat(info)
+  if (result.success) {
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> 已在浏览器中打开'
+    btn.style.opacity = '0.7'
+  } else {
+    btn.disabled = false
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> 启动失败: ' + (result.error || '未知错误')
+    btn.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)'
+    setTimeout(() => {
+      btn.style.background = ''
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> 启动 OpenClaw 并打开浏览器'
+    }, 3000)
+  }
+}
+
+// ─── 管理面板 ───
+function showDashboard() {
+  // 隐藏安装流程的 steps 和 logo
+  document.querySelector('.steps').style.display = 'none'
+  document.querySelector('.logo').style.display = 'none'
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.getElementById('page5').classList.add('active')
+
+  if (dashInfo) {
+    document.getElementById('dashUrl').textContent = dashInfo.url || ('http://127.0.0.1:' + (dashInfo.port || 18789))
+    document.getElementById('dashDir').textContent = dashInfo.installDir || '-'
+    document.getElementById('dashVersion').textContent = 'v' + (dashInfo.version || '1.0.0')
+    if (dashInfo.installedAt) {
+      const d = new Date(dashInfo.installedAt)
+      document.getElementById('dashVersion').textContent += ' · 安装于 ' + d.toLocaleDateString('zh-CN')
+    }
+  }
+  updateGatewayStatus()
+  // 每 5 秒刷新状态
+  if (statusTimer) clearInterval(statusTimer)
+  statusTimer = setInterval(updateGatewayStatus, 5000)
+}
+
+async function updateGatewayStatus() {
+  const port = dashInfo ? (dashInfo.port || 18789) : 18789
+  const result = await api.checkGateway(port)
+  const el = document.getElementById('dashStatus')
+  const launchBtn = document.getElementById('dashLaunchBtn')
+  const stopBtn = document.getElementById('dashStopBtn')
+  if (result.running) {
+    el.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block"></span> 运行中'
+    el.style.background = '#052e16'; el.style.color = '#10b981'; el.style.borderColor = '#065f46'
+    launchBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> 打开 OpenClaw'
+    stopBtn.disabled = false
+  } else {
+    el.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block"></span> 已停止'
+    el.style.background = '#2d0a0a'; el.style.color = '#f87171'; el.style.borderColor = '#7f1d1d'
+    launchBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px"><polygon points="5 3 19 12 5 21 5 3" fill="white" stroke="none"/></svg> 启动 OpenClaw'
+    stopBtn.disabled = true
+  }
+}
+
+async function launchOpenClaw() {
+  const btn = document.getElementById('dashLaunchBtn')
+  btn.disabled = true
+  btn.innerHTML = '<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:20px;height:20px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> 正在启动...'
+  const result = await api.openWebchat(dashInfo)
+  btn.disabled = false
+  if (result.success) {
+    updateGatewayStatus()
+  } else {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' + (result.error || '启动失败')
+    btn.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)'
+    setTimeout(() => { btn.style.background = ''; updateGatewayStatus() }, 3000)
+  }
+}
+
+async function dashStopGateway() {
+  const btn = document.getElementById('dashStopBtn')
+  btn.disabled = true
+  btn.innerHTML = '<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> 停止中...'
+  const port = dashInfo ? (dashInfo.port || 18789) : 18789
+  await api.stopGateway(port)
+  await new Promise(r => setTimeout(r, 1500))
+  btn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg> 停止 Gateway'
+  updateGatewayStatus()
+}
+
+function dashOpenWebchat() { api.openWebchat(dashInfo) }
+function dashOpenDir() { api.openFolder(dashInfo ? dashInfo.installDir : '') }
+function dashOpenConfig() {
+  const dir = dashInfo ? dashInfo.installDir : ''
+  if (dir) api.openFile(dir + '\\openclaw.json')
+}
+
+function dashReinstall() {
+  if (statusTimer) { clearInterval(statusTimer); statusTimer = null }
+  document.querySelector('.steps').style.display = 'flex'
+  document.querySelector('.logo').style.display = 'block'
+  dashInfo = null
+  showPage(1)
+}
+</script>
+</body>
+</html>

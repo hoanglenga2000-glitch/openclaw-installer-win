@@ -1,0 +1,59 @@
+{
+  "name": "openclaw-installer",
+  "version": "1.0.0",
+  "description": "OpenClaw 一键安装器",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --win --x64",
+    "dist": "electron-builder --win --x64",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.openclaw.installer",
+    "productName": "OpenClaw 安装器",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": false,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "OpenClaw",
+      "license": "LICENSE.txt"
+    },
+    "extraResources": [
+      {
+        "from": "node-win/",
+        "to": "node-win/",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "openclaw-full.7z",
+        "to": "openclaw-full.7z"
+      },
+      {
+        "from": "7za.exe",
+        "to": "7za.exe"
+      }
+    ],
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "asar": true
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  }
+}

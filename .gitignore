@@ -1,0 +1,10 @@
+node_modules/
+dist/
+node-win/
+openclaw-full.7z
+openclaw.tgz
+7za.exe
+*.exe
+!assets/icon.ico
+package-lock.json
+scripts/
