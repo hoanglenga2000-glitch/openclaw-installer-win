@@ -186,6 +186,175 @@ ipcMain.handle('open-webchat', async (event, installInfoOverride) => {
 // ─── IPC: 获取版本号 ───
 ipcMain.handle('get-version', () => APP_VERSION)
 
+// ─── IPC: 读取配置文件 ───
+ipcMain.handle('get-config', async (event, installDir) => {
+  try {
+    const dir = installDir || findInstallInfo()?.installDir
+    if (!dir) return { success: false, error: '未找到安装目录' }
+    const configPath = path.join(dir, 'openclaw.json')
+    if (!fs.existsSync(configPath)) return { success: false, error: '配置文件不存在' }
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+    // 提取当前模型和 provider 信息
+    const providers = config.models?.providers || {}
+    const defaultModel = config.agents?.defaults?.model?.primary || ''
+    const providerEntries = []
+    for (const [name, prov] of Object.entries(providers)) {
+      providerEntries.push({
+        name,
+        baseUrl: prov.baseUrl || '',
+        apiKey: prov.apiKey ? '***' + prov.apiKey.slice(-4) : '',
+        apiKeyFull: prov.apiKey || '',
+        api: prov.api || 'openai-completions',
+        models: (prov.models || []).map(m => typeof m === 'string' ? m : (m.id || m.name || ''))
+      })
+    }
+    return { success: true, config, providers: providerEntries, currentModel: defaultModel, installDir: dir }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+// ─── IPC: 从已配置的 API 获取可用模型列表 ───
+ipcMain.handle('fetch-models-from-config', async (event, installDir) => {
+  try {
+    const dir = installDir || findInstallInfo()?.installDir
+    if (!dir) return { success: false, error: '未找到安装目录' }
+    const configPath = path.join(dir, 'openclaw.json')
+    if (!fs.existsSync(configPath)) return { success: false, error: '配置文件不存在' }
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+    const providers = config.models?.providers || {}
+    const results = {}
+    for (const [name, prov] of Object.entries(providers)) {
+      if (!prov.baseUrl || !prov.apiKey) continue
+      try {
+        const httpMod = prov.baseUrl.startsWith('https') ? require('https') : require('http')
+        const url = new URL(prov.baseUrl.replace(/\/$/, '') + '/models')
+        const models = await new Promise((resolve) => {
+          const req = httpMod.request({
+            hostname: url.hostname, port: url.port || (url.protocol === 'https:' ? 443 : 80),
+            path: url.pathname + (url.search || ''), method: 'GET',
+            headers: { 'Authorization': `Bearer ${prov.apiKey}`, 'Content-Type': 'application/json' },
+            timeout: 10000
+          }, (res) => {
+            let body = ''
+            res.on('data', chunk => body += chunk)
+            res.on('end', () => {
+              try {
+                const data = JSON.parse(body)
+                let list = []
+                if (data.data && Array.isArray(data.data)) list = data.data.map(m => m.id).filter(Boolean).sort()
+                else if (Array.isArray(data)) list = data.map(m => m.id || m.name || m).filter(Boolean).sort()
+                resolve(list)
+              } catch { resolve([]) }
+            })
+          })
+          req.on('error', () => resolve([]))
+          req.on('timeout', () => { req.destroy(); resolve([]) })
+          req.end()
+        })
+        results[name] = models
+      } catch { results[name] = [] }
+    }
+    return { success: true, models: results }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+// ─── IPC: 切换模型 ───
+ipcMain.handle('switch-model', async (event, { installDir, providerName, modelId }) => {
+  try {
+    const dir = installDir || findInstallInfo()?.installDir
+    if (!dir) return { success: false, error: '未找到安装目录' }
+    const configPath = path.join(dir, 'openclaw.json')
+    if (!fs.existsSync(configPath)) return { success: false, error: '配置文件不存在' }
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+
+    // 更新 primary model
+    const newPrimary = `${providerName}/${modelId}`
+    if (!config.agents) config.agents = {}
+    if (!config.agents.defaults) config.agents.defaults = {}
+    if (!config.agents.defaults.model) config.agents.defaults.model = {}
+    config.agents.defaults.model.primary = newPrimary
+
+    // 确保 provider 的 models 列表包含这个模型
+    const prov = config.models?.providers?.[providerName]
+    if (prov) {
+      const existingModels = prov.models || []
+      const hasModel = existingModels.some(m => (typeof m === 'string' ? m : (m.id || m.name)) === modelId)
+      if (!hasModel) {
+        existingModels.push({ id: modelId, name: modelId, reasoning: false, input: ['text'], contextWindow: 128000, maxTokens: 8192 })
+        prov.models = existingModels
+      }
+    }
+
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8')
+    return { success: true, model: newPrimary }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+// ─── IPC: 获取 Gateway 日志 ───
+ipcMain.handle('get-gateway-logs', async (event, installDir) => {
+  try {
+    const dir = installDir || findInstallInfo()?.installDir
+    if (!dir) return { success: false, error: '未找到安装目录' }
+    const logFile = path.join(dir, 'gateway-startup.log')
+    if (!fs.existsSync(logFile)) return { success: true, logs: '暂无日志' }
+    const content = fs.readFileSync(logFile, 'utf8')
+    // 只返回最后 100 行
+    const lines = content.split(/\r?\n/)
+    return { success: true, logs: lines.slice(-100).join('\n') }
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+})
+
+// ─── IPC: 系统信息 ───
+ipcMain.handle('get-system-info', async () => {
+  const cpus = os.cpus()
+  const totalMem = os.totalmem()
+  const freeMem = os.freemem()
+  const usedMem = totalMem - freeMem
+  let diskInfo = null
+  try {
+    const drive = os.homedir().charAt(0)
+    const out = execSync(`powershell -Command "(Get-PSDrive ${drive}).Free,(Get-PSDrive ${drive}).Used"`, { encoding: 'utf8', timeout: 5000 }).trim()
+    const parts = out.split(/\r?\n/)
+    if (parts.length >= 2) {
+      const free = parseInt(parts[0])
+      const used = parseInt(parts[1])
+      diskInfo = { free, used, total: free + used }
+    }
+  } catch {}
+  // CPU usage (rough estimate)
+  let cpuUsage = 0
+  try {
+    const out = execSync('powershell -Command "(Get-Counter \'\\Processor(_Total)\\% Processor Time\').CounterSamples.CookedValue"', { encoding: 'utf8', timeout: 5000 }).trim()
+    cpuUsage = Math.round(parseFloat(out))
+  } catch {}
+  return {
+    cpu: { model: cpus[0]?.model || 'Unknown', cores: cpus.length, usage: cpuUsage },
+    memory: { total: totalMem, used: usedMem, free: freeMem },
+    disk: diskInfo,
+    uptime: os.uptime(),
+    platform: `${os.type()} ${os.release()}`
+  }
+})
+
+// ─── IPC: 重启 Gateway ───
+ipcMain.handle('restart-gateway', async (event, info) => {
+  const installInfo = info || findInstallInfo()
+  if (!installInfo) return { success: false, error: '未找到安装信息' }
+  const port = installInfo.port || 18789
+  // 先停
+  killPortProcess(port)
+  await new Promise(r => setTimeout(r, 2000))
+  // 再启
+  return await doStartGateway(installInfo)
+})
+
 app.whenReady().then(createWindow)
 app.on('window-all-closed', () => app.quit())
 

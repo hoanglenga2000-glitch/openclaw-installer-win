@@ -11,13 +11,21 @@ contextBridge.exposeInMainWorld('api', {
   validateInstallDir: (dir) => ipcRenderer.invoke('validate-install-dir', dir),
   copyToClipboard: (text) => ipcRenderer.invoke('copy-to-clipboard', text),
 
-  // Gateway 管理（新增）
+  // Gateway 管理
   checkInstall: () => ipcRenderer.invoke('check-install'),
   checkGateway: (port) => ipcRenderer.invoke('check-gateway', port),
   startGateway: (info) => ipcRenderer.invoke('start-gateway', info),
   stopGateway: (port) => ipcRenderer.invoke('stop-gateway', port),
   openWebchat: (info) => ipcRenderer.invoke('open-webchat', info),
   getVersion: () => ipcRenderer.invoke('get-version'),
+
+  // 模型管理（新增）
+  getConfig: (installDir) => ipcRenderer.invoke('get-config', installDir),
+  switchModel: (args) => ipcRenderer.invoke('switch-model', args),
+  fetchModelsFromConfig: (installDir) => ipcRenderer.invoke('fetch-models-from-config', installDir),
+  getGatewayLogs: (installDir) => ipcRenderer.invoke('get-gateway-logs', installDir),
+  getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+  restartGateway: (info) => ipcRenderer.invoke('restart-gateway', info),
 
   // 外部操作
   openUrl: (url) => ipcRenderer.send('open-url', url),
