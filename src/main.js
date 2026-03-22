@@ -355,6 +355,223 @@ ipcMain.handle('restart-gateway', async (event, info) => {
   return await doStartGateway(installInfo)
 })
 
+// ─── IPC: 一键诊断修复 ───
+ipcMain.handle('diagnose-and-repair', async (event, installDir) => {
+  const dir = installDir || findInstallInfo()?.installDir
+  if (!dir) return { success: false, error: '未找到安装目录', checks: [] }
+
+  const checks = []
+  let fixedCount = 0
+
+  // 1. 检查安装目录是否存在
+  const dirExists = fs.existsSync(dir)
+  checks.push({ name: '安装目录', status: dirExists ? 'ok' : 'error', detail: dirExists ? dir : '目录不存在: ' + dir, fixable: false })
+
+  if (!dirExists) return { success: true, checks, fixedCount }
+
+  // 2. 检查 openclaw.json 配置文件
+  const configPath = path.join(dir, 'openclaw.json')
+  const configExists = fs.existsSync(configPath)
+  let configValid = false
+  let configError = ''
+  if (configExists) {
+    try { JSON.parse(fs.readFileSync(configPath, 'utf8')); configValid = true }
+    catch (e) { configError = 'JSON 格式错误: ' + e.message }
+  }
+  checks.push({
+    name: '配置文件',
+    status: !configExists ? 'error' : !configValid ? 'warn' : 'ok',
+    detail: !configExists ? '缺失 openclaw.json' : !configValid ? configError : '配置正常',
+    fixable: !configExists
+  })
+  // 修复：如果配置文件不存在，创建默认配置
+  if (!configExists) {
+    try {
+      const defaultConfig = {
+        models: { providers: { default: { baseUrl: '', apiKey: '', api: 'openai-completions', models: [] } } },
+        agents: { defaults: { model: { primary: 'default/' } } },
+        gateway: { mode: 'local', port: 18789, bind: 'loopback', auth: { mode: 'token', token: crypto.randomBytes(24).toString('hex') }, controlUi: { allowInsecureAuth: true } }
+      }
+      fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2), 'utf8')
+      checks[checks.length - 1].status = 'fixed'
+      checks[checks.length - 1].detail = '已创建默认配置（需要填写 API Key）'
+      fixedCount++
+    } catch (e) { checks[checks.length - 1].detail = '创建失败: ' + e.message }
+  }
+
+  // 3. 检查 access.json
+  const accessPath = path.join(dir, 'access.json')
+  const accessExists = fs.existsSync(accessPath)
+  let accessValid = false
+  if (accessExists) {
+    try { const a = JSON.parse(fs.readFileSync(accessPath, 'utf8')); accessValid = !!(a.token && a.port); } catch {}
+  }
+  checks.push({
+    name: '访问凭证',
+    status: !accessExists ? 'error' : !accessValid ? 'warn' : 'ok',
+    detail: !accessExists ? '缺失 access.json' : !accessValid ? 'access.json 内容不完整' : '凭证正常',
+    fixable: !accessExists || !accessValid
+  })
+  // 修复：从 openclaw.json 重建 access.json
+  if (!accessExists || !accessValid) {
+    try {
+      if (configExists || fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+        const token = config.gateway?.auth?.token || crypto.randomBytes(24).toString('hex')
+        const port = config.gateway?.port || 18789
+        const model = config.agents?.defaults?.model?.primary || ''
+        fs.writeFileSync(accessPath, JSON.stringify({
+          url: `http://127.0.0.1:${port}`, token, port, model, installDir: dir, repairedAt: new Date().toISOString()
+        }, null, 2), 'utf8')
+        secureFile(accessPath)
+        checks[checks.length - 1].status = 'fixed'
+        checks[checks.length - 1].detail = '已从配置文件重建访问凭证'
+        fixedCount++
+      }
+    } catch (e) { checks[checks.length - 1].detail = '修复失败: ' + e.message }
+  }
+
+  // 4. 检查 Node.js 运行时
+  const nodeExe = path.join(dir, 'node-win', 'node.exe')
+  const nodeExists = fs.existsSync(nodeExe)
+  let nodeVersion = ''
+  if (nodeExists) {
+    try { nodeVersion = execSync(`"${nodeExe}" --version`, { encoding: 'utf8', timeout: 5000 }).trim() } catch {}
+  }
+  checks.push({
+    name: 'Node.js 运行时',
+    status: !nodeExists ? 'error' : !nodeVersion ? 'warn' : 'ok',
+    detail: !nodeExists ? '缺失 node-win/node.exe（需重新安装）' : nodeVersion ? 'Node ' + nodeVersion : 'node.exe 存在但无法执行',
+    fixable: false
+  })
+
+  // 5. 检查 OpenClaw 核心文件
+  const ocEntry = path.join(dir, 'openclaw-pkg', 'openclaw.mjs')
+  const ocExists = fs.existsSync(ocEntry)
+  const nodeModules = path.join(dir, 'openclaw-pkg', 'node_modules')
+  const nmExists = fs.existsSync(nodeModules)
+  checks.push({
+    name: 'OpenClaw 核心',
+    status: !ocExists ? 'error' : !nmExists ? 'warn' : 'ok',
+    detail: !ocExists ? '缺失 openclaw.mjs（需重新安装）' : !nmExists ? '缺失 node_modules（需重新安装）' : 'openclaw.mjs + node_modules 正常',
+    fixable: false
+  })
+
+  // 6. 检查端口占用
+  let port = 18789
+  try {
+    if (configExists) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+      port = config.gateway?.port || 18789
+    }
+  } catch {}
+  const gatewayRunning = await checkGatewayRunning(port)
+  let portConflict = false
+  if (!gatewayRunning) {
+    // 检查端口是否被其他进程占用
+    try {
+      const out = execSync(`netstat -ano | findstr ":${port}" | findstr "LISTENING"`, { encoding: 'utf8', timeout: 5000 })
+      if (out.trim()) portConflict = true
+    } catch {}
+  }
+  checks.push({
+    name: '端口 ' + port,
+    status: gatewayRunning ? 'ok' : portConflict ? 'warn' : 'ok',
+    detail: gatewayRunning ? 'Gateway 正在运行' : portConflict ? '端口被其他程序占用' : '端口空闲',
+    fixable: portConflict
+  })
+  // 修复：杀掉占用端口的进程
+  if (portConflict) {
+    killPortProcess(port)
+    await new Promise(r => setTimeout(r, 1000))
+    checks[checks.length - 1].status = 'fixed'
+    checks[checks.length - 1].detail = '已清理占用端口的进程'
+    fixedCount++
+  }
+
+  // 7. 检查开机自启
+  const startupBat = path.join(os.homedir(), 'AppData', 'Roaming', 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', 'openclaw-gateway.bat')
+  const startupExists = fs.existsSync(startupBat)
+  checks.push({
+    name: '开机自启',
+    status: startupExists ? 'ok' : 'warn',
+    detail: startupExists ? '已配置开机自启' : '未配置开机自启',
+    fixable: !startupExists
+  })
+  // 修复：重建开机自启脚本
+  if (!startupExists && ocExists && nodeExists) {
+    try {
+      const ocBinCmd = path.join(dir, 'bin', 'openclaw.cmd')
+      const ocPath = fs.existsSync(ocBinCmd) ? ocBinCmd : 'openclaw'
+      const gwEnv = { OPENCLAW_STATE_DIR: dir, OPENCLAW_CONFIG_PATH: configPath }
+      createAutoStart(ocPath, gwEnv, port)
+      checks[checks.length - 1].status = 'fixed'
+      checks[checks.length - 1].detail = '已重建开机自启脚本'
+      fixedCount++
+    } catch {}
+  }
+
+  // 8. 检查桌面快捷方式
+  const desktopShortcut = path.join(os.homedir(), 'Desktop', 'OpenClaw.url')
+  const shortcutExists = fs.existsSync(desktopShortcut)
+  checks.push({
+    name: '桌面快捷方式',
+    status: shortcutExists ? 'ok' : 'warn',
+    detail: shortcutExists ? '快捷方式存在' : '桌面快捷方式缺失',
+    fixable: !shortcutExists
+  })
+  // 修复：重建桌面快捷方式
+  if (!shortcutExists) {
+    try {
+      let token = ''
+      try { const a = JSON.parse(fs.readFileSync(accessPath, 'utf8')); token = a.token || '' } catch {}
+      if (!token) { try { const c = JSON.parse(fs.readFileSync(configPath, 'utf8')); token = c.gateway?.auth?.token || '' } catch {} }
+      if (token) {
+        createDesktopShortcut(token, port)
+        checks[checks.length - 1].status = 'fixed'
+        checks[checks.length - 1].detail = '已重建桌面快捷方式'
+        fixedCount++
+      }
+    } catch {}
+  }
+
+  // 9. 检查文件权限
+  let configReadable = false
+  try { fs.accessSync(configPath, fs.constants.R_OK | fs.constants.W_OK); configReadable = true } catch {}
+  if (configExists && !configReadable) {
+    checks.push({ name: '文件权限', status: 'warn', detail: '配置文件权限异常', fixable: true })
+    try {
+      secureFile(configPath)
+      secureFile(accessPath)
+      checks[checks.length - 1].status = 'fixed'
+      checks[checks.length - 1].detail = '已修复文件权限'
+      fixedCount++
+    } catch {}
+  } else {
+    checks.push({ name: '文件权限', status: 'ok', detail: '权限正常', fixable: false })
+  }
+
+  // 10. 检查磁盘空间
+  let diskLow = false
+  try {
+    const drive = dir.charAt(0)
+    const out = execSync(`powershell -Command "(Get-PSDrive ${drive}).Free"`, { encoding: 'utf8', timeout: 5000 }).trim()
+    const freeBytes = parseInt(out)
+    const freeGB = freeBytes / 1073741824
+    diskLow = freeGB < 1
+    checks.push({
+      name: '磁盘空间',
+      status: diskLow ? 'warn' : 'ok',
+      detail: diskLow ? '剩余空间不足 1 GB（' + freeGB.toFixed(1) + ' GB）' : '剩余 ' + freeGB.toFixed(1) + ' GB',
+      fixable: false
+    })
+  } catch {
+    checks.push({ name: '磁盘空间', status: 'ok', detail: '无法检测', fixable: false })
+  }
+
+  return { success: true, checks, fixedCount }
+})
+
 app.whenReady().then(createWindow)
 app.on('window-all-closed', () => app.quit())
 

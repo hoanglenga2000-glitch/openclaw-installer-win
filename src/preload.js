@@ -27,6 +27,9 @@ contextBridge.exposeInMainWorld('api', {
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
   restartGateway: (info) => ipcRenderer.invoke('restart-gateway', info),
 
+  // 诊断修复
+  diagnoseAndRepair: (installDir) => ipcRenderer.invoke('diagnose-and-repair', installDir),
+
   // 外部操作
   openUrl: (url) => ipcRenderer.send('open-url', url),
   openFolder: (p) => ipcRenderer.send('open-folder', p),
