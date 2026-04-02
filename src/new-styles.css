@@ -216,6 +216,16 @@ select option{background:var(--bg-card);color:var(--text-primary)}
 .panel-intro-title{font-size:15px;font-weight:800;letter-spacing:-.01em;color:#eef2ff}
 .panel-intro-sub{font-size:12px;line-height:1.65;color:#94a3b8;max-width:620px}
 .panel-block{position:relative}
+.workflow-hint-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:2px}
+.workflow-hint-row-channels{grid-template-columns:repeat(4,minmax(0,1fr))}
+.workflow-hint-card{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid #2a2a34;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.008));color:#94a3b8;font-size:11px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.14)}
+.workflow-hint-card.active{border-color:rgba(99,102,241,.35);background:linear-gradient(180deg,rgba(99,102,241,.10),rgba(99,102,241,.04));color:#e2e8f0}
+.workflow-hint-index{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:999px;background:#151827;border:1px solid #32384a;color:#cbd5e1;font-size:10px;font-weight:800;flex-shrink:0}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;padding:24px 16px;border:1px dashed #2d3342;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,.018),rgba(255,255,255,.008));color:#94a3b8}
+.empty-state.compact{padding:18px 14px}
+.empty-state-icon{font-size:20px;line-height:1}
+.empty-state-title{font-size:13px;font-weight:700;color:#e2e8f0}
+.empty-state-desc{font-size:11px;line-height:1.7;color:#7c8598;max-width:360px}
 .dash-tabs{display:flex;gap:4px;background:#11131a !important;border:1px solid #262a35 !important;border-radius:12px !important;padding:4px !important;margin-bottom:14px !important;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
 .dash-tab{border-radius:10px !important;padding:9px 0 !important;font-size:11px !important;font-weight:700 !important;color:#7c8598 !important;transition:all .18s ease !important}
 .dash-tab:hover{color:#cbd5e1 !important;background:rgba(255,255,255,.02) !important}
@@ -235,7 +245,7 @@ select option{background:var(--bg-card);color:var(--text-primary)}
   .overview-hero{flex-direction:column;align-items:flex-start}
   .overview-hero-meta{align-items:flex-start;min-width:auto}
   .hero-meta-caption{text-align:left}
-  .overview-grid,.manage-cards{grid-template-columns:1fr !important}
+  .overview-grid,.manage-cards,.workflow-hint-row,.workflow-hint-row-channels{grid-template-columns:1fr !important}
 }
 
 /* ── Utility ── */
