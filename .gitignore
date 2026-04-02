@@ -8,3 +8,26 @@ openclaw.tgz
 !assets/icon.ico
 package-lock.json
 scripts/
+
+# local temp / debug artifacts
+.claude/
+temp_*/
+_tmp_*/
+*.log
+*.bak
+*.backup
+*.png
+!assets/brand-logo.png
+!src/brand-logo.png
+!src/logos/**
+manifest_*.json
+check_*.py
+update*.py
+*_review.js
+title.txt
+CLAUDE.md
+*_VALIDATION.md
+*_REPORT.md
+RELEASE_CHECKLIST.md
+4c比赛软件图/
+用户使用文档.md
