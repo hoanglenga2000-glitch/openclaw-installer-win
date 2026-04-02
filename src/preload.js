@@ -13,22 +13,49 @@ contextBridge.exposeInMainWorld('api', {
 
   // Gateway 管理
   checkInstall: () => ipcRenderer.invoke('check-install'),
+  getInstallInfo: () => ipcRenderer.invoke('get-install-info'),
   checkGateway: (port) => ipcRenderer.invoke('check-gateway', port),
   startGateway: (info) => ipcRenderer.invoke('start-gateway', info),
   stopGateway: (port) => ipcRenderer.invoke('stop-gateway', port),
   openWebchat: (info) => ipcRenderer.invoke('open-webchat', info),
   getVersion: () => ipcRenderer.invoke('get-version'),
 
-  // 模型管理（新增）
+  // 模型 / 配置 / 状态
   getConfig: (installDir) => ipcRenderer.invoke('get-config', installDir),
   switchModel: (args) => ipcRenderer.invoke('switch-model', args),
   fetchModelsFromConfig: (installDir) => ipcRenderer.invoke('fetch-models-from-config', installDir),
   getGatewayLogs: (installDir) => ipcRenderer.invoke('get-gateway-logs', installDir),
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
   restartGateway: (info) => ipcRenderer.invoke('restart-gateway', info),
-
-  // 诊断修复
   diagnoseAndRepair: (installDir) => ipcRenderer.invoke('diagnose-and-repair', installDir),
+
+  // Provider 管理
+  saveProvider: (args) => ipcRenderer.invoke('save-provider', args),
+  deleteProvider: (args) => ipcRenderer.invoke('delete-provider', args),
+
+  // Channel 集成
+  runOpenclawCmd: (args) => ipcRenderer.invoke('run-openclaw-cmd', args),
+  loadChannelConfig: (installDir) => ipcRenderer.invoke('load-channel-config', installDir),
+  saveChannelConfig: (args) => ipcRenderer.invoke('save-channel-config', args),
+  testChannelConnection: (args) => ipcRenderer.invoke('test-channel-connection', args),
+  installWeixinPlugin: (installDir) => ipcRenderer.invoke('install-weixin-plugin', installDir),
+  loginWeixinChannel: (args) => ipcRenderer.invoke('login-weixin-channel', args),
+
+  // License（兼容旧 UI，若主进程无实现则返回占位结果，避免前端直接炸）
+  licenseCheck: async () => ({ activated: true, skipped: true }),
+  licenseActivate: async () => ({ success: true, skipped: true }),
+
+  // 日志导出
+  exportLogs: (installDir) => ipcRenderer.invoke('export-logs', installDir),
+
+  // 预置 provider 常量，兼容旧前端引用
+  openai: 'openai',
+  anthropic: 'anthropic',
+  deepseek: 'deepseek',
+  siliconflow: 'siliconflow',
+  moonshot: 'moonshot',
+  groq: 'groq',
+  together: 'together',
 
   // 外部操作
   openUrl: (url) => ipcRenderer.send('open-url', url),

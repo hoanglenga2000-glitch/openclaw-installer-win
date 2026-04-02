@@ -2,82 +2,352 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://127.0.0.1:* https:;">
+<script src="qrcode.min.js"></script>
 <title>OpenClaw 安装器</title>
 <style>
+/* ═══════════════════════════════════════════════════════════════
+   OpenClaw Installer — Design System v2.0
+   Inspired by Linear / Vercel / Raycast dark themes
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── CSS Custom Properties ── */
+:root {
+  /* Background layers */
+  --bg-deepest: #0a0a0a;
+  --bg-card: #111111;
+  --bg-elevated: #1a1a1a;
+  --bg-input: #161616;
+  --bg-surface: #0e0e0e;
+
+  /* Brand */
+  --brand: #6366f1;
+  --brand-hover: #818cf8;
+  --brand-muted: rgba(99,102,241,0.15);
+  --brand-glow: rgba(99,102,241,0.08);
+
+  /* Semantic */
+  --success: #22c55e;
+  --success-bg: rgba(34,197,94,0.08);
+  --success-border: rgba(34,197,94,0.2);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245,158,11,0.08);
+  --warning-border: rgba(245,158,11,0.2);
+  --error: #ef4444;
+  --error-bg: rgba(239,68,68,0.08);
+  --error-border: rgba(239,68,68,0.2);
+  --info: #3b82f6;
+
+  /* Text */
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --text-tertiary: #737373;
+  --text-disabled: #525252;
+
+  /* Borders */
+  --border: #262626;
+  --border-hover: #404040;
+  --border-focus: #6366f1;
+
+  /* Spacing (8px grid) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-12: 48px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, 'Microsoft YaHei', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Reset ── */
 *{box-sizing:border-box;margin:0;padding:0;user-select:none}
-::-webkit-scrollbar{width:6px}
+::selection{background:var(--brand-muted);color:var(--text-primary)}
+::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#2d2d3f;border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:#4a4a6a}
-body{font-family:-apple-system,BlinkMacSystemFont,'Microsoft YaHei','Segoe UI',sans-serif;background:#0f0f1a;color:#e2e8f0;min-height:100vh;overflow:hidden;display:flex;flex-direction:column}
-.titlebar{height:38px;background:#0a0a14;display:flex;align-items:center;justify-content:space-between;padding:0 0 0 16px;-webkit-app-region:drag;flex-shrink:0;border-bottom:1px solid #1a1a2a}
-.titlebar-left{display:flex;align-items:center;gap:8px;font-size:12px;color:#64748b}
+::-webkit-scrollbar-thumb{background:#333;border-radius:var(--radius-full)}
+::-webkit-scrollbar-thumb:hover{background:#555}
+
+/* ── Body ── */
+body{
+  font-family:var(--font-sans);
+  background:var(--bg-deepest);
+  color:var(--text-primary);
+  min-height:100vh;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* ── Titlebar ── */
+.titlebar{
+  height:40px;
+  background:var(--bg-deepest);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 0 0 var(--sp-4);
+  -webkit-app-region:drag;
+  flex-shrink:0;
+  border-bottom:1px solid var(--border);
+}
+.titlebar-left{display:flex;align-items:center;gap:var(--sp-2);font-size:12px;color:var(--text-tertiary);font-weight:500;letter-spacing:0.01em}
 .titlebar-left svg{width:16px;height:16px}
 .titlebar-btns{display:flex;-webkit-app-region:no-drag;height:100%}
-.tb{width:46px;height:100%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s}
-.tb svg{width:16px;height:16px;stroke:#94a3b8;fill:none;stroke-width:1.5}
-.tb:hover{background:#1e1e2e}
-.tb:hover svg{stroke:#e2e8f0}
+.tb{width:46px;height:100%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s ease}
+.tb svg{width:16px;height:16px;stroke:var(--text-tertiary);fill:none;stroke-width:1.5}
+.tb:hover{background:var(--bg-elevated)}
+.tb:hover svg{stroke:var(--text-primary)}
 .tb-close:hover{background:#e81123}
 .tb-close:hover svg{stroke:white}
-.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:20px 40px 20px;overflow-y:auto;overflow-x:hidden}
-.logo{text-align:center;margin-bottom:16px}
+
+/* ── Main Container ── */
+.main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:var(--sp-6) var(--sp-8) var(--sp-6);
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+/* ── Logo ── */
+.logo{text-align:center;margin-bottom:var(--sp-4)}
 .logo svg{width:48px;height:48px}
-.logo h1{font-size:20px;font-weight:700;margin-top:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.logo p{color:#64748b;font-size:12px;margin-top:3px}
-.steps{display:flex;align-items:center;margin-bottom:18px;justify-content:center}
-.step-item{display:flex;flex-direction:column;align-items:center;gap:3px}
-.step-circle{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;background:#1e1e2e;border:2px solid #2d2d3f;color:#4a4a6a;transition:all .3s}
-.step-circle.active{border-color:#6366f1;color:#6366f1;background:#1a1a2e}
-.step-circle.done{background:#10b981;border-color:#10b981;color:white}
-.step-label{font-size:10px;color:#4a4a6a;white-space:nowrap}
-.step-label.active{color:#94a3b8}
-.step-line{width:40px;height:2px;background:#2d2d3f;margin:0 6px;margin-bottom:14px;transition:background .3s}
-.step-line.done{background:#10b981}
-.page{width:100%;display:none;flex-direction:column;gap:12px}
+.logo h1{
+  font-size:22px;
+  font-weight:700;
+  margin-top:var(--sp-2);
+  background:linear-gradient(135deg,#818cf8,#6366f1);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  letter-spacing:-0.02em;
+}
+.logo p{color:var(--text-tertiary);font-size:13px;margin-top:var(--sp-1);letter-spacing:0.01em}
+
+/* ── Step Indicator ── */
+.steps{display:flex;align-items:center;margin-bottom:var(--sp-6);justify-content:center}
+.step-item{display:flex;flex-direction:column;align-items:center;gap:var(--sp-1)}
+.step-circle{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;
+  background:var(--bg-card);
+  border:2px solid var(--border);
+  color:var(--text-disabled);
+  transition:all .4s var(--ease-out);
+}
+.step-circle.active{
+  border-color:var(--brand);
+  color:var(--brand);
+  background:var(--brand-glow);
+  box-shadow:0 0 0 4px var(--brand-muted);
+}
+.step-circle.done{
+  background:var(--success);
+  border-color:var(--success);
+  color:white;
+  box-shadow:0 0 0 4px var(--success-bg);
+}
+.step-label{font-size:10px;color:var(--text-disabled);white-space:nowrap;font-weight:500}
+.step-label.active{color:var(--text-secondary)}
+.step-line{width:40px;height:2px;background:var(--border);margin:0 var(--sp-2);margin-bottom:14px;transition:background .3s ease;border-radius:1px}
+.step-line.done{background:var(--success)}
+
+/* ── Pages ── */
+.page{width:100%;display:none;flex-direction:column;gap:var(--sp-4);animation:fadeSlideIn .3s var(--ease-out);overflow-y:auto;max-height:calc(100vh - 80px)}
 .page.active{display:flex}
-.form-group{display:flex;flex-direction:column;gap:5px}
-label{font-size:12px;color:#94a3b8;font-weight:500;display:flex;align-items:center;gap:6px}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Form Elements ── */
+.form-group{display:flex;flex-direction:column;gap:var(--sp-1)}
+label{
+  font-size:12px;
+  color:var(--text-secondary);
+  font-weight:500;
+  display:flex;
+  align-items:center;
+  gap:var(--sp-2);
+  letter-spacing:0.01em;
+}
 label svg{width:14px;height:14px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.hint{font-size:11px;color:#4a4a6a}
-input,select{background:#1e1e2e;border:1px solid #2d2d3f;border-radius:8px;padding:10px 12px;color:#e2e8f0;font-size:13px;outline:none;transition:border-color .2s;width:100%;font-family:inherit;-webkit-appearance:none;appearance:none}
-input:focus,select:focus{border-color:#6366f1}
-input::placeholder{color:#3a3a5a}
-input.input-error{border-color:#f87171}
-select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
-select option{background:#1e1e2e;color:#e2e8f0}
-.provider-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.pcard{background:#1e1e2e;border:2px solid #2d2d3f;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:5px}
-.pcard:hover{border-color:#4a4a6a;background:#252538}
-.pcard.selected{border-color:#6366f1;background:#1a1a2e;box-shadow:0 0 12px rgba(99,102,241,.15)}
-.pcard .picon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white}
-.pcard span{font-size:10px;color:#94a3b8;font-weight:500}
-.pcard.selected span{color:#e2e8f0}
-.input-row{display:flex;gap:8px;align-items:flex-end}
+.hint{font-size:11px;color:var(--text-tertiary)}
+
+input,select{
+  background:var(--bg-input);
+  border:1px solid var(--border);
+  border-radius:var(--radius-md);
+  padding:10px 14px;
+  color:var(--text-primary);
+  font-size:13px;
+  outline:none;
+  transition:border-color .2s ease, box-shadow .2s ease;
+  width:100%;
+  font-family:inherit;
+  -webkit-appearance:none;
+  appearance:none;
+}
+input:focus,select:focus{
+  border-color:var(--brand);
+  box-shadow:0 0 0 3px var(--brand-muted);
+}
+input::placeholder{color:var(--text-disabled)}
+input.input-error{border-color:var(--error)}
+select{
+  cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737373' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  padding-right:32px;
+}
+select option{background:var(--bg-card);color:var(--text-primary)}
+
+/* ── Provider Cards ── */
+.provider-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-3);align-items:stretch}
+.pcard{
+  position:relative;
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+  padding:14px 10px 12px;
+  min-height:92px;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s ease;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:var(--sp-2);
+  overflow:hidden;
+}
+.pcard::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.015),transparent 40%);pointer-events:none;border-radius:inherit}
+.pcard::after{display:none}
+.pcard:hover{
+  border-color:var(--border-hover);
+  background:var(--bg-elevated);
+  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
+}
+.pcard.selected{
+  border-color:var(--brand);
+  background:var(--brand-glow);
+  box-shadow:0 0 0 1px var(--brand-muted),0 4px 16px rgba(0,0,0,0.3);
+  transform:translateY(-1px);
+}
+.pcard.selected::after{
+  display:block;
+  content:'';
+  position:absolute;
+  left:0;top:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg,var(--brand),var(--brand-hover));
+  border-top-left-radius:var(--radius-lg);
+  border-top-right-radius:var(--radius-lg);
+}
+.pcard .picon{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  background:#ffffff;
+  border:1px solid #e0e0e0;
+  box-shadow:0 1px 3px rgba(0,0,0,0.1);
+}
+.pcard .picon img{width:22px;height:22px;border-radius:4px;object-fit:contain;background:transparent;padding:0;display:block;filter:none}
+.pcard span{
+  font-size:11px;
+  color:var(--text-secondary);
+  font-weight:600;
+  letter-spacing:0.02em;
+  line-height:1.2;
+  display:flex;align-items:center;justify-content:center;
+  min-height:14px;text-align:center;
+}
+.pcard.selected span{color:var(--text-primary)}
+.pcard.p-deepseek .picon,.pcard.p-openai .picon,.pcard.p-claude .picon,.pcard.p-qwen .picon,.pcard.p-zhipu .picon,.pcard.p-kimi .picon,.pcard.p-siliconflow .picon,.pcard.p-doubao .picon{border-color:#e0e0e0}
+
+/* ── Input Row ── */
+.input-row{display:flex;gap:var(--sp-2);align-items:flex-end}
 .input-row .form-group{flex:1}
 .pwd-wrap{position:relative;flex:1}
 .pwd-wrap input{width:100%;padding-right:38px}
 .pwd-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:2px;display:flex;align-items:center}
-.pwd-toggle svg{width:16px;height:16px;stroke:#4a4a6a;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.pwd-toggle:hover svg{stroke:#94a3b8}
-.ibtn{height:38px;padding:0 14px;border-radius:8px;border:1px solid #2d2d3f;background:#1e1e2e;color:#94a3b8;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap;transition:all .15s;flex-shrink:0;font-family:inherit}
-.ibtn:hover{border-color:#6366f1;color:#e2e8f0}
-.ibtn:disabled{opacity:.4;cursor:not-allowed}
+.pwd-toggle svg{width:16px;height:16px;stroke:var(--text-disabled);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pwd-toggle:hover svg{stroke:var(--text-secondary)}
+
+/* ── Inline Button ── */
+.ibtn{
+  height:38px;padding:0 14px;
+  border-radius:var(--radius-md);
+  border:1px solid var(--border);
+  background:var(--bg-card);
+  color:var(--text-secondary);
+  font-size:12px;
+  cursor:pointer;
+  display:flex;align-items:center;gap:var(--sp-1);
+  white-space:nowrap;
+  transition:all .15s ease;
+  flex-shrink:0;
+  font-family:inherit;
+  font-weight:500;
+}
+.ibtn:hover{border-color:var(--brand);color:var(--text-primary);background:var(--bg-elevated)}
+.ibtn:active{transform:scale(.97)}
+.ibtn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .ibtn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.model-loading{font-size:11px;color:#64748b;padding:4px 0;display:flex;align-items:center;gap:6px}
-.btn{width:100%;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px}
+.model-loading{font-size:11px;color:var(--text-tertiary);padding:var(--sp-1) 0;display:flex;align-items:center;gap:var(--sp-2)}
+
+/* ── Buttons ── */
+.btn{
+  width:100%;
+  padding:10px 20px;
+  border-radius:var(--radius-md);
+  border:none;
+  font-size:14px;
+  font-weight:500;
+  cursor:pointer;
+  transition:all .15s ease;
+  font-family:inherit;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:var(--sp-2);
+}
 .btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.btn-primary{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white}
-.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
-.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-primary{background:var(--brand);color:white}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 16px rgba(99,102,241,.3)}
+.btn-primary:active{transform:translateY(0);box-shadow:none}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
 .btn-success{background:linear-gradient(135deg,#10b981,#059669);color:white}
-.btn-success:hover{opacity:.9;transform:translateY(-1px)}
+.btn-success:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 16px rgba(16,185,129,.3)}
+.btn-success:active{transform:translateY(0);box-shadow:none}
 .btn-outline{background:transparent;border:1px solid #2d2d3f;color:#94a3b8;padding:10px;font-size:12px}
 .btn-outline:hover{border-color:#6366f1;color:#e2e8f0}
 .btn-row{display:flex;gap:8px}
 .btn-row .btn{flex:1}
 .progress-wrap{background:#0a0a14;border-radius:6px;height:5px;overflow:hidden}
-.progress-bar{height:100%;background:linear-gradient(90deg,#6366f1,#8b5cf6);border-radius:6px;transition:width .6s ease;width:0%}
+.progress-bar{height:100%;background:linear-gradient(90deg,#6366f1,#8b5cf6,#6366f1);background-size:200% 100%;border-radius:6px;transition:width .6s ease;width:0%;position:relative}
+.progress-bar.active{animation:progressPulse 1.5s ease-in-out infinite,progressShimmer 2s linear infinite}
+@keyframes progressPulse{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes progressShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .install-steps{display:flex;flex-direction:column;gap:3px}
 .install-step{display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:8px;font-size:12px;color:#3a3a5a;transition:all .3s}
 .install-step.active{color:#e2e8f0;background:#1e1e2e}
@@ -91,9 +361,10 @@ select option{background:#1e1e2e;color:#e2e8f0}
 .terminal .tline.err{color:#f87171}
 .error-banner{background:#2d0a0a;border:1px solid #7f1d1d;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#f87171}
 .error-banner svg{width:18px;height:18px;flex-shrink:0;stroke:#f87171;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.done-icon{text-align:center;margin-bottom:6px}
-.done-icon svg{width:52px;height:52px}
-.done-title{text-align:center;font-size:17px;font-weight:700;margin-bottom:3px}
+.done-icon{text-align:center;margin-bottom:6px;animation:bounceIn .5s cubic-bezier(.68,-.55,.27,1.55)}
+.done-icon svg{width:52px;height:52px;filter:drop-shadow(0 4px 12px rgba(16,185,129,.3))}
+@keyframes bounceIn{0%{opacity:0;transform:scale(.3)}50%{transform:scale(1.05)}70%{transform:scale(.95)}100%{opacity:1;transform:scale(1)}}
+.done-title{text-align:center;font-size:17px;font-weight:700;margin-bottom:3px;animation:fadeSlideIn .4s ease .15s both}
 .done-sub{text-align:center;font-size:12px;color:#64748b;margin-bottom:6px}
 .info-box{background:#1e1e2e;border:1px solid #2d2d3f;border-radius:8px;padding:10px 12px}
 .info-box+.info-box{margin-top:4px}
@@ -116,8 +387,9 @@ select option{background:#1e1e2e;color:#e2e8f0}
 .api-status.error{background:#2d0a0a;color:#f87171;border:1px solid #7f1d1d}
 .dir-error{font-size:11px;color:#f87171;padding:2px 0}
 .manage-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.mcard{background:#1e1e2e;border:1px solid #2d2d3f;border-radius:8px;padding:12px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px}
-.mcard:hover{border-color:#6366f1;background:#252538}
+.mcard{background:#1e1e2e;border:1px solid #2d2d3f;border-radius:8px;padding:12px;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;gap:10px}
+.mcard:hover{border-color:#6366f1;background:#252538;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.mcard:active{transform:translateY(0)}
 .mcard svg{width:20px;height:20px;stroke:#6366f1;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .mcard .mc-text{display:flex;flex-direction:column;gap:1px}
 .mcard .mc-title{font-size:12px;font-weight:600;color:#e2e8f0}
@@ -133,8 +405,62 @@ select option{background:#1e1e2e;color:#e2e8f0}
 .dash-tab:hover{color:#94a3b8}
 .dash-tab.active{color:#e2e8f0;background:#1e1e2e;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 .dash-tab svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.dash-panel{display:none}
+.dash-panel{display:none;animation:fadeSlideIn .25s ease}
 .dash-panel.active{display:flex;flex-direction:column;gap:8px}
+
+/* Modal */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center}
+.modal-box{background:#12121e;border:1px solid #2d2d3f;border-radius:12px;padding:16px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.modal-close{background:none;border:none;color:#64748b;cursor:pointer;padding:4px;border-radius:4px}
+.modal-close:hover{color:#e2e8f0;background:#1e1e2e}
+/* Provider Management */
+.provider-mgmt-list{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}
+.provider-mgmt-list::-webkit-scrollbar{width:4px}
+.provider-mgmt-list::-webkit-scrollbar-thumb{background:#2d2d3f;border-radius:2px}
+.prov-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#1a1a2e;border:1px solid #2d2d3f;border-radius:8px;transition:all .2s}
+.prov-item:hover{border-color:#3a3a5a;background:#1e1e30}
+.prov-item .prov-color{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.prov-item .prov-name{font-size:12px;font-weight:600;color:#e2e8f0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prov-item .prov-key{font-size:10px;color:#64748b;font-family:monospace}
+.prov-item .prov-actions{display:flex;gap:2px;flex-shrink:0}
+.prov-item .prov-actions button{background:none;border:none;color:#64748b;cursor:pointer;padding:3px;border-radius:4px;display:flex;align-items:center}
+.prov-item .prov-actions button:hover{color:#e2e8f0;background:#2d2d3f}
+.prov-item .prov-actions button.del:hover{color:#f87171;background:#f8717115}
+.quick-pick{padding:3px 8px;font-size:10px;border-radius:12px;border:1px solid #2d2d3f;background:#1a1a2e;color:#94a3b8;cursor:pointer;transition:all .2s}
+.quick-pick:hover{border-color:#10b981;color:#10b981;background:#10b98110}
+.quick-pick.active{border-color:#10b981;color:#10b981;background:#10b98115}
+/* Channel Integration */
+.channel-cards{display:flex;flex-direction:column;gap:10px}
+.channel-card{background:#1e1e2e;border:1px solid #2d2d3f;border-radius:10px;overflow:hidden;transition:all .25s}
+.channel-card:hover{border-color:#3a3a5a}
+.channel-card.connected{border-color:#10b98133}
+.channel-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;transition:background .15s}
+.channel-header:hover{background:#252538}
+.channel-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.channel-info{flex:1;min-width:0}
+.channel-name{font-size:13px;font-weight:600;color:#e2e8f0}
+.channel-desc{font-size:11px;color:#4a4a6a;margin-top:1px}
+.channel-status{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;flex-shrink:0}
+.channel-status.off{color:#4a4a6a;background:#1a1a2a}
+.channel-status.on{color:#10b981;background:#052e1680}
+.channel-status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.channel-status.off .channel-status-dot{background:#4a4a6a}
+.channel-status.on .channel-status-dot{background:#10b981;box-shadow:0 0 6px #10b981}
+.channel-expand{display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;transition:transform .2s}
+.channel-expand svg{width:14px;height:14px;stroke:#4a4a6a;fill:none;stroke-width:2}
+.channel-expand.open{transform:rotate(180deg)}
+.channel-body{display:none;padding:0 16px 14px;flex-direction:column;gap:8px;border-top:1px solid #2d2d3f}
+.channel-body.open{display:flex}
+.channel-form{display:flex;flex-direction:column;gap:8px}
+.channel-form .form-group{display:flex;flex-direction:column;gap:4px}
+.channel-form label{font-size:11px;color:#64748b;font-weight:500}
+.channel-form input{background:#0f0f1a;border:1px solid #2d2d3f;border-radius:6px;padding:8px 10px;color:#e2e8f0;font-size:12px;outline:none;transition:border-color .2s;width:100%;font-family:inherit}
+.channel-form input:focus{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.1)}
+.channel-form input::placeholder{color:#3a3a5a}
+.channel-form input.readonly{opacity:.7;cursor:default}
+.channel-actions{display:flex;gap:8px;margin-top:4px}
+.channel-actions .btn{flex:1;padding:9px;font-size:12px;border-radius:8px}
 
 /* Model Switcher */
 .model-current{background:#1e1e2e;border:1px solid #2d2d3f;border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -174,7 +500,7 @@ select option{background:#1e1e2e;color:#e2e8f0}
 .sys-bar-fill.red{background:#ef4444}
 
 /* Log Viewer */
-.log-viewer{background:#0a0a14;border:1px solid #1e1e2e;border-radius:8px;padding:8px 10px;height:200px;overflow-y:auto;font-family:'Consolas','Courier New',monospace;font-size:11px;color:#4a4a6a;line-height:1.5;white-space:pre-wrap;word-break:break-all}
+.log-viewer{background:#0a0a14;border:1px solid #1e1e2e;border-radius:8px;padding:8px 10px;height:280px;overflow-y:auto;font-family:'Consolas','Courier New',monospace;font-size:11px;color:#4a4a6a;line-height:1.5;white-space:pre-wrap;word-break:break-all}
 .log-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .log-toolbar .lt-label{font-size:11px;color:#64748b;display:flex;align-items:center;gap:5px}
 .log-toolbar .lt-label svg{width:12px;height:12px}
@@ -197,19 +523,24 @@ select option{background:#1e1e2e;color:#e2e8f0}
 .repair-stat .rs-val.red{color:#ef4444}
 .repair-stat .rs-val.blue{color:#6366f1}
 .repair-stat .rs-label{font-size:10px;color:#4a4a6a;margin-top:2px}
-.check-list{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto}
-.check-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;background:#1e1e2e;border:1px solid #2d2d3f;font-size:12px;transition:all .2s}
-.check-item .ci-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
-.check-item .ci-icon svg{width:16px;height:16px;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;fill:none}
-.check-item .ci-icon.ok svg{stroke:#10b981}
-.check-item .ci-icon.warn svg{stroke:#f59e0b}
-.check-item .ci-icon.error svg{stroke:#ef4444}
-.check-item .ci-icon.fixed svg{stroke:#6366f1}
-.check-item .ci-icon.checking svg{stroke:#4a4a6a}
+.check-list{display:flex;flex-direction:column;gap:4px;max-height:380px;overflow-y:auto}
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:6px;background:#1e1e2e;border:1px solid #2d2d3f;font-size:12px;transition:all .2s}
+.check-item:hover{background:#252538;border-color:#3d3d5f}
+.check-item .ci-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.check-item .ci-icon svg{width:16px;height:16px;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;fill:none;transition:all .3s}
+.check-item .ci-icon.ok svg{stroke:#10b981;animation:checkPop .3s ease}
+.check-item .ci-icon.warn svg{stroke:#f59e0b;animation:checkPop .3s ease}
+.check-item .ci-icon.error svg{stroke:#ef4444;animation:checkPop .3s ease}
+.check-item .ci-icon.fixed svg{stroke:#6366f1;animation:checkPop .3s ease}
+.check-item .ci-icon.checking svg{stroke:#4a4a6a;animation:spin 1.2s linear infinite}
+@keyframes checkPop{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideOutRight{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(100px)}}
 .check-item .ci-body{flex:1;min-width:0}
 .check-item .ci-name{font-weight:600;color:#e2e8f0}
-.check-item .ci-detail{font-size:11px;color:#64748b;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.check-item .ci-detail{font-size:11px;color:#64748b;margin-top:2px;line-height:1.4;word-break:break-word}
 </style>
+<link rel="stylesheet" href="new-styles.css">
 </head>
 <body>
 <div class="titlebar">
@@ -218,9 +549,9 @@ select option{background:#1e1e2e;color:#e2e8f0}
     OpenClaw 安装器 <span style="color:#4a4a6a;font-size:11px" id="titleVersion">v1.0.0</span>
   </div>
   <div class="titlebar-btns">
-    <button class="tb" onclick="api.minimize()" title="最小化"><svg viewBox="0 0 24 24"><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
-    <button class="tb" onclick="api.maximize()" id="maxBtn" title="最大化"><svg viewBox="0 0 24 24" id="maxIcon"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
-    <button class="tb tb-close" onclick="api.close()" title="关闭"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>
+    <button class="tb" onclick="api.minimize()" title="最小化" aria-label="最小化窗口"><svg viewBox="0 0 24 24"><line x1="6" y1="12" x2="18" y2="12"/></svg></button>
+    <button class="tb" onclick="api.maximize()" id="maxBtn" title="最大化" aria-label="最大化窗口"><svg viewBox="0 0 24 24" id="maxIcon"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+    <button class="tb tb-close" onclick="api.close()" title="关闭" aria-label="关闭窗口"><svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg></button>
   </div>
 </div>
 <div class="main">
@@ -243,57 +574,57 @@ select option{background:#1e1e2e;color:#e2e8f0}
   <div class="page active" id="page1">
     <div style="font-size:13px;color:#94a3b8;margin-bottom:2px">选择你的 AI 服务商：</div>
     <div class="provider-cards">
-      <div class="pcard" onclick="selectProvider('deepseek')" id="p-deepseek">
-        <div class="picon" style="background:linear-gradient(135deg,#0A6CFF,#0052CC)">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2 2"/></svg>
+      <div class="pcard p-deepseek" onclick="selectProvider('deepseek')" id="p-deepseek">
+        <div class="picon">
+          <img src="logos/deepseek-real.jpg" alt="DeepSeek" style="width:22px;height:22px;border-radius:4px;object-fit:contain">
         </div>
         <span>DeepSeek</span>
       </div>
-      <div class="pcard" onclick="selectProvider('openai')" id="p-openai">
-        <div class="picon" style="background:linear-gradient(135deg,#10a37f,#0d8c6d)">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="1.8"><path d="M12 2a7 7 0 0 1 6.93 6.06A5 5 0 0 1 18 18h-1.5M6 18a5 5 0 0 1-.93-9.94A7 7 0 0 1 12 2"/><path d="M12 12v6m-3-3l3 3 3-3"/></svg>
+      <div class="pcard p-openai" onclick="selectProvider('openai')" id="p-openai">
+        <div class="picon">
+          <img src="logos/openai-real.jpg" alt="OpenAI" style="width:22px;height:22px;border-radius:4px;object-fit:contain">
         </div>
         <span>OpenAI</span>
       </div>
-      <div class="pcard" onclick="selectProvider('claude')" id="p-claude">
-        <div class="picon" style="background:linear-gradient(135deg,#D97706,#B45309)">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M12 3L4 9v6l8 6 8-6V9l-8-6z"/><circle cx="12" cy="12" r="3"/></svg>
+      <div class="pcard p-claude" onclick="selectProvider('claude')" id="p-claude">
+        <div class="picon">
+          <img src="logos/claude-real.jpg" alt="Claude" style="width:22px;height:22px;border-radius:4px;object-fit:contain">
         </div>
         <span>Claude</span>
       </div>
-      <div class="pcard" onclick="selectProvider('qwen')" id="p-qwen">
-        <div class="picon" style="background:linear-gradient(135deg,#6236FF,#4318D1)">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M12 7v5l3 3"/></svg>
+      <div class="pcard p-qwen" onclick="selectProvider('qwen')" id="p-qwen">
+        <div class="picon">
+          <img src="logos/qwen-real.jpg" alt="通义千问" style="width:22px;height:22px;border-radius:4px;object-fit:contain">
         </div>
         <span>通义千问</span>
       </div>
-      <div class="pcard" onclick="selectProvider('zhipu')" id="p-zhipu">
-        <div class="picon" style="background:linear-gradient(135deg,#3B82F6,#1D4ED8)">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+      <div class="pcard p-zhipu" onclick="selectProvider('zhipu')" id="p-zhipu">
+        <div class="picon">
+          <img src="logos/zhipu-real.jpg" alt="智谱 GLM" style="width:22px;height:22px;border-radius:4px;object-fit:contain">
         </div>
         <span>智谱 GLM</span>
       </div>
-      <div class="pcard" onclick="selectProvider('kimi')" id="p-kimi">
-        <div class="picon" style="background:linear-gradient(135deg,#1a1a2e,#0f0f1a);border:1px solid #333">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <div class="pcard p-kimi" onclick="selectProvider('kimi')" id="p-kimi">
+        <div class="picon">
+          <img src="logos/kimi-real.jpg" alt="Kimi" style="width:22px;height:22px;border-radius:4px;object-fit:contain">
         </div>
         <span>Kimi</span>
       </div>
-      <div class="pcard" onclick="selectProvider('siliconflow')" id="p-siliconflow">
-        <div class="picon" style="background:linear-gradient(135deg,#8B5CF6,#6D28D9)">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <div class="pcard p-siliconflow" onclick="selectProvider('siliconflow')" id="p-siliconflow">
+        <div class="picon">
+          <img src="logos/siliconflow-real.jpg" alt="硅基流动" style="width:22px;height:22px;border-radius:4px;object-fit:contain">
         </div>
         <span>硅基流动</span>
       </div>
-      <div class="pcard" onclick="selectProvider('doubao')" id="p-doubao">
-        <div class="picon" style="background:linear-gradient(135deg,#00D4AA,#00A385)">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6a6 6 0 0 1 6 6"/><circle cx="12" cy="12" r="2"/></svg>
+      <div class="pcard p-doubao" onclick="selectProvider('doubao')" id="p-doubao">
+        <div class="picon">
+          <img src="logos/doubao-real.jpg" alt="豆包" style="width:22px;height:22px;border-radius:4px;object-fit:contain">
         </div>
         <span>豆包</span>
       </div>
       <div class="pcard" onclick="selectProvider('custom')" id="p-custom">
         <div class="picon" style="background:linear-gradient(135deg,#6366f1,#4F46E5)">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </div>
         <span>自定义</span>
       </div>
@@ -395,6 +726,44 @@ select option{background:#1e1e2e;color:#e2e8f0}
     </button>
   </div>
 
+  <!-- License 激活遮罩 -->
+  <div id="licenseOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(145deg,#0a0a14 0%,#0f0f2a 50%,#0a0a14 100%);z-index:9999;flex-direction:column;align-items:center;justify-content:center;padding:40px;animation:fadeSlideIn .3s ease">
+    <!-- 窗口控制按钮 -->
+    <div style="position:absolute;top:0;left:0;right:0;height:36px;-webkit-app-region:drag;display:flex;align-items:center;justify-content:flex-end;padding-right:4px">
+      <button onclick="api.minimize()" style="background:none;border:none;color:#64748b;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-app-region:no-drag;border-radius:6px;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#e2e8f0'" onmouseout="this.style.background='none';this.style.color='#64748b'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+      <button onclick="api.maximize()" style="background:none;border:none;color:#64748b;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-app-region:no-drag;border-radius:6px;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.08)';this.style.color='#e2e8f0'" onmouseout="this.style.background='none';this.style.color='#64748b'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="1"/></svg></button>
+      <button onclick="api.close()" style="background:none;border:none;color:#64748b;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-app-region:no-drag;border-radius:6px;transition:all .2s" onmouseover="this.style.background='#dc2626';this.style.color='white'" onmouseout="this.style.background='none';this.style.color='#64748b'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <!-- 背景装饰 -->
+    <div style="position:absolute;top:-100px;right:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(99,102,241,.08) 0%,transparent 70%);pointer-events:none"></div>
+    <div style="position:absolute;bottom:-80px;left:-80px;width:300px;height:300px;background:radial-gradient(circle,rgba(139,92,246,.06) 0%,transparent 70%);pointer-events:none"></div>
+    <div style="text-align:center;max-width:440px;width:100%;position:relative">
+      <!-- Logo -->
+      <div style="margin-bottom:24px">
+        <div style="width:72px;height:72px;margin:0 auto;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(99,102,241,.2);border:1px solid rgba(99,102,241,.2)">
+          <svg viewBox="0 0 40 40" fill="none" style="width:40px;height:40px"><path d="M20 6l2 4h4l-3 3 1 4-4-2-4 2 1-4-3-3h4l2-4z" fill="#6366f1"/><circle cx="20" cy="24" r="8" stroke="#8b5cf6" stroke-width="2" fill="none"/><path d="M16 24h8M20 20v8" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <div style="font-size:24px;font-weight:800;background:linear-gradient(135deg,#e2e8f0,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;letter-spacing:-.5px">激活 OpenClaw</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:32px">请输入您的 License Key 以激活产品</div>
+      <!-- 输入框 -->
+      <div style="margin-bottom:16px;position:relative">
+        <div style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#4a4a6a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <input type="text" id="licenseKeyInput" placeholder="OC-XXXX-XXXX-XXXX" style="text-align:center;font-size:17px;letter-spacing:3px;text-transform:uppercase;padding:16px 16px 16px 42px;border-radius:14px;background:rgba(30,30,50,.8);border:2px solid rgba(99,102,241,.2);color:#e2e8f0;width:100%;outline:none;font-family:'SF Mono',Monaco,Consolas,monospace;transition:all .3s;backdrop-filter:blur(4px)" onfocus="this.style.borderColor='#6366f1';this.style.boxShadow='0 0 0 4px rgba(99,102,241,.15)'" onblur="this.style.borderColor='rgba(99,102,241,.2)';this.style.boxShadow='none'">
+      </div>
+      <div id="licenseError" style="display:none;font-size:12px;color:#f87171;margin-bottom:12px;padding:10px 14px;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.15);border-radius:10px"></div>
+      <div id="licenseSuccess" style="display:none;font-size:12px;color:#10b981;margin-bottom:12px;padding:10px 14px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15);border-radius:10px"></div>
+      <button class="btn btn-primary" onclick="activateLicense()" id="licenseBtn" style="margin-bottom:16px;width:100%;justify-content:center;padding:14px;font-size:15px;border-radius:14px;box-shadow:0 6px 24px rgba(99,102,241,.35)">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        激活
+      </button>
+      <div style="font-size:12px;color:#4a4a6a;line-height:1.8">
+        还没有 License Key？<br>
+        请联系销售获取：<a style="color:#6366f1;cursor:pointer;text-decoration:none;border-bottom:1px dashed rgba(99,102,241,.4)" onclick="api.openUrl('https://download.zhjjq.tech')">download.zhjjq.tech</a>
+      </div>
+    </div>
+  </div>
+
   <!-- Page 5: 管理面板（已安装用户直接进入） -->
   <div class="page" id="page5">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -439,6 +808,10 @@ select option{background:#1e1e2e;color:#e2e8f0}
         <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
         修复
       </button>
+      <button class="dash-tab" onclick="switchDashTab('channels')" id="dtChannels">
+        <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        渠道
+      </button>
     </div>
 
     <!-- Panel: 概览 -->
@@ -474,7 +847,15 @@ select option{background:#1e1e2e;color:#e2e8f0}
           <div class="mc-text"><div class="mc-title">查看文档</div><div class="mc-desc">docs.openclaw.ai</div></div>
         </div>
       </div>
+      <div class="info-box" id="gwStatusBox" style="border-left:3px solid #10b981">
+        <div class="ib-row"><svg viewBox="0 0 24 24" stroke="#10b981"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><div class="ib-label">Gateway 状态</div></div>
+        <div class="ib-val" style="display:flex;align-items:center;gap:8px"><span id="gwStatusText" style="color:#10b981;font-weight:700">检测中...</span><span id="gwUptimeText" style="font-size:11px;color:#64748b"></span></div>
+      </div>
       <div class="btn-row" style="margin-top:6px">
+        <button class="btn btn-outline" onclick="dashRestartGateway()" id="dashRestartBtn" style="flex:1;color:#6366f1;border-color:#6366f133">
+          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          重启 Gateway
+        </button>
         <button class="btn btn-outline" onclick="dashStopGateway()" id="dashStopBtn" style="flex:1">
           <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
           停止 Gateway
@@ -488,6 +869,27 @@ select option{background:#1e1e2e;color:#e2e8f0}
 
     <!-- Panel: 模型切换 -->
     <div class="dash-panel" id="dpModels">
+      <!-- Provider 管理区 -->
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:600;color:#e2e8f0;display:flex;align-items:center;gap:6px">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+            API 密钥管理
+          </div>
+          <button class="ibtn" onclick="showAddProviderDialog()" style="font-size:11px;padding:2px 10px;color:#10b981;border-color:#10b98133">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            添加服务商
+          </button>
+        </div>
+        <div id="providerList" class="provider-mgmt-list">
+          <div style="text-align:center;padding:12px;color:#4a4a6a;font-size:11px">加载中...</div>
+        </div>
+      </div>
+
+      <!-- 分割线 -->
+      <div style="border-top:1px solid #1e1e2e;margin:8px 0"></div>
+
+      <!-- 当前模型 + 切换 -->
       <div class="model-current">
         <div class="mc-left">
           <div class="mc-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
@@ -516,6 +918,42 @@ select option{background:#1e1e2e;color:#e2e8f0}
         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         应用并重启 Gateway
       </button>
+    </div>
+
+    <!-- Provider 添加/编辑对话框 -->
+    <div class="modal-overlay" id="providerModal" style="display:none">
+      <div class="modal-box" style="max-width:420px">
+        <div class="modal-header">
+          <span id="providerModalTitle" style="font-size:14px;font-weight:600;color:#e2e8f0">添加服务商</span>
+          <button class="modal-close" onclick="closeProviderModal()"><svg viewBox="0 0 24 24" style="width:16px;height:16px" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <div class="modal-body">
+          <div style="margin-bottom:8px">
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">快速选择</div>
+            <div id="providerQuickPicks" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+          </div>
+          <div class="form-group" style="margin-bottom:8px"><label style="font-size:11px;color:#94a3b8;margin-bottom:3px;display:block">名称</label><input id="pmName" placeholder="如 deepseek、openai" style="width:100%;height:32px;font-size:12px;padding:0 10px;border-radius:6px;background:#1a1a2e;border:1px solid #2d2d3f;color:#e2e8f0;outline:none;box-sizing:border-box"></div>
+          <div class="form-group" style="margin-bottom:8px"><label style="font-size:11px;color:#94a3b8;margin-bottom:3px;display:block">API Base URL</label><input id="pmBaseUrl" placeholder="https://api.deepseek.com/v1" style="width:100%;height:32px;font-size:12px;padding:0 10px;border-radius:6px;background:#1a1a2e;border:1px solid #2d2d3f;color:#e2e8f0;outline:none;box-sizing:border-box"></div>
+          <div class="form-group" style="margin-bottom:8px"><label style="font-size:11px;color:#94a3b8;margin-bottom:3px;display:block">API Key</label><input id="pmApiKey" type="password" placeholder="sk-..." style="width:100%;height:32px;font-size:12px;padding:0 10px;border-radius:6px;background:#1a1a2e;border:1px solid #2d2d3f;color:#e2e8f0;outline:none;box-sizing:border-box"></div>
+          <div class="form-group" style="margin-bottom:8px"><label style="font-size:11px;color:#94a3b8;margin-bottom:3px;display:block">API 协议</label>
+            <select id="pmApiType" style="width:100%;height:32px;font-size:12px;padding:0 8px;border-radius:6px;background:#1a1a2e;border:1px solid #2d2d3f;color:#e2e8f0;outline:none;box-sizing:border-box">
+              <option value="openai-completions">OpenAI Completions</option>
+              <option value="openai-responses">OpenAI Responses</option>
+              <option value="anthropic-messages">Anthropic Messages</option>
+              <option value="google">Google Gemini</option>
+            </select>
+          </div>
+          <div id="pmTestResult" style="font-size:11px;min-height:16px;margin-top:4px"></div>
+        </div>
+        <div class="modal-footer" style="display:flex;gap:6px;justify-content:flex-end;padding-top:8px;border-top:1px solid #1e1e2e">
+          <button class="btn btn-outline" onclick="testProviderInModal()" id="pmTestBtn" style="font-size:11px;padding:4px 12px">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> 测试
+          </button>
+          <button class="btn btn-primary" onclick="saveProviderFromModal()" id="pmSaveBtn" style="font-size:11px;padding:4px 16px">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> 保存
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Panel: 系统监控 -->
@@ -554,11 +992,26 @@ select option{background:#1e1e2e;color:#e2e8f0}
     <!-- Panel: 日志 -->
     <div class="dash-panel" id="dpLogs">
       <div class="log-toolbar">
-        <div class="lt-label"><svg viewBox="0 0 24 24" stroke="#64748b"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Gateway 启动日志</div>
-        <button class="ibtn" onclick="refreshLogs()" style="height:28px;font-size:11px;padding:0 10px">
-          <svg viewBox="0 0 24 24" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-          刷新
-        </button>
+        <div class="lt-label"><svg viewBox="0 0 24 24" stroke="#64748b"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Gateway 日志</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="text" id="logSearchInput" placeholder="搜索日志..." style="width:130px;height:28px;font-size:11px;padding:0 8px;border-radius:6px;background:#1e1e2e;border:1px solid #2d2d3f;color:#e2e8f0;outline:none" oninput="searchLogs()">
+          <button class="ibtn" onclick="refreshLogs()" style="height:28px;font-size:11px;padding:0 10px">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            刷新
+          </button>
+          <button class="ibtn" onclick="toggleAutoRefreshLogs()" id="autoRefreshBtn" style="height:28px;font-size:11px;padding:0 10px" title="实时日志流">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            实时
+          </button>
+          <button class="ibtn" onclick="exportLogs()" style="height:28px;font-size:11px;padding:0 10px">
+            <svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            导出
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span id="logStats" style="font-size:10px;color:#4a4a6a"></span>
+        <span id="autoRefreshStatus" style="font-size:10px;color:#4a4a6a"></span>
       </div>
       <div class="log-viewer" id="logViewer">加载中...</div>
     </div>
@@ -571,7 +1024,8 @@ select option{background:#1e1e2e;color:#e2e8f0}
           诊断与修复
         </div>
       </div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:8px">自动检测 10 项常见问题，能修的直接修，不能修的告诉你怎么办。</div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:8px">自动检测 25 项常见问题，修复前自动备份配置，能修的直接修，不能修的告诉你怎么办。覆盖配置、运行时、网络、安全、日志全方位诊断。</div>
+      <div id="lastDiagnoseTime" style="font-size:10px;color:#4a4a6a;margin-bottom:6px"></div>
       <button class="btn btn-primary" onclick="runDiagnose()" id="repairBtn" style="margin-bottom:10px">
         <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
         开始诊断修复
@@ -584,9 +1038,122 @@ select option{background:#1e1e2e;color:#e2e8f0}
       </div>
       <div class="check-list" id="checkList"></div>
     </div>
+
+    <!-- Panel: 渠道接入 -->
+    <div class="dash-panel" id="dpChannels">
+      <div style="font-size:12px;color:#64748b;margin-bottom:4px">一键接入消息渠道，配置后重启 Gateway 即可生效。</div>
+      <div class="channel-cards">
+
+        <!-- 微信公众号 -->
+        <div class="channel-card" id="chWechat">
+          <div class="channel-header" onclick="toggleChannel('wechat')">
+            <div class="channel-icon" style="background:linear-gradient(135deg,#07c160,#06ad56)">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 0 1-.023-.156.49.49 0 0 1 .201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.27-.027-.407-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.982.969-.982z"/></svg>
+            </div>
+            <div class="channel-info">
+              <div class="channel-name">微信个人号</div>
+              <div class="channel-desc">扫码登录微信，直接收发消息（openclaw-weixin 插件）</div>
+            </div>
+            <div class="channel-status off" id="chWechatStatus"><div class="channel-status-dot"></div>未接入</div>
+            <div class="channel-expand" id="chWechatArrow"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+          </div>
+          <div class="channel-body" id="chWechatBody">
+            <div class="channel-form">
+              <div style="background:#0f0f1a;border:1px solid #2d2d3f;border-radius:8px;padding:12px;margin-bottom:10px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                  <svg viewBox="0 0 24 24" style="width:16px;height:16px;flex-shrink:0" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span style="font-size:12px;color:#e2e8f0;font-weight:600">openclaw-weixin 插件</span>
+                </div>
+                <div style="font-size:11px;color:#94a3b8;line-height:1.6">
+                  通过 openclaw-weixin 插件扫码登录你的微信个人号，无需公众号。支持私聊和群聊消息收发。
+                </div>
+              </div>
+              <div style="text-align:center;padding:16px;background:#0f0f1a;border:1px solid #2d2d3f;border-radius:8px;margin-bottom:10px" id="wechatQrArea">
+                <div id="wechatQrCode" style="margin-bottom:8px">
+                  <div style="width:180px;height:180px;margin:0 auto;background:#1a1a2e;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#4a4a6a;font-size:11px">点击下方按钮获取二维码</div>
+                </div>
+                <div id="wechatQrStatus" style="font-size:11px;color:#94a3b8">等待扫码...</div>
+              </div>
+              <div class="form-group"><label>数据目录（可选）</label><input id="chWechatDataDir" placeholder="留空使用默认目录"></div>
+            </div>
+            <div class="channel-actions">
+              <button class="btn btn-outline" id="wechatInstallBtn" onclick="installWeixinPlugin()"><svg viewBox="0 0 24 24" style="width:14px;height:14px" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 安装插件</button>
+              <button class="btn btn-primary" id="wechatScanBtn" onclick="startWeixinScan()"><svg viewBox="0 0 24 24" style="width:14px;height:14px" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h7v7"/></svg> 扫码登录</button>
+            </div>
+            <div class="channel-msg" id="chWechatMsg"></div>
+          </div>
+        </div>
+
+        <!-- QQ 机器人 -->
+        <div class="channel-card" id="chQq">
+          <div class="channel-header" onclick="toggleChannel('qq')">
+            <div class="channel-icon" style="background:linear-gradient(135deg,#12b7f5,#0d8ecf)">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M21.395 15.035a40 40 0 0 0-.803-2.264l-1.079-2.695c.001-.032.014-.562.014-.836C19.526 4.632 17.351 0 12 0S4.474 4.632 4.474 9.241c0 .274.013.804.014.836l-1.08 2.695a39 39 0 0 0-.802 2.264c-1.021 3.283-.69 4.643-.438 4.673.54.065 2.103-2.472 2.103-2.472 0 1.469.756 3.387 2.394 4.771-.612.188-1.363.479-1.845.835-.434.32-.379.646-.301.778.343.578 5.883.369 7.482.189 1.6.18 7.14.389 7.483-.189.078-.132.132-.458-.301-.778-.483-.356-1.233-.646-1.846-.836 1.637-1.384 2.393-3.302 2.393-4.771 0 0 1.563 2.537 2.103 2.472.251-.03.581-1.39-.438-4.673"/></svg>
+            </div>
+            <div class="channel-info">
+              <div class="channel-name">QQ 机器人</div>
+              <div class="channel-desc">接入 QQ 开放平台机器人</div>
+            </div>
+            <div class="channel-status off" id="chQqStatus"><div class="channel-status-dot"></div>未接入</div>
+            <div class="channel-expand" id="chQqArrow"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+          </div>
+          <div class="channel-body" id="chQqBody">
+            <div class="channel-form">
+              <div class="form-group"><label>AppID</label><input id="chQqAppId" placeholder="QQ 开放平台 AppID"></div>
+              <div class="form-group"><label>AppSecret (ClientSecret)</label><input id="chQqAppSecret" placeholder="QQ 开放平台 ClientSecret" type="password"></div>
+              <div class="form-group"><label>Token</label><input id="chQqToken" placeholder="QQ 开放平台 Token"></div>
+            </div>
+            <div class="channel-actions">
+              <button class="btn btn-outline" onclick="testChannel('qq')"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> 测试连接</button>
+              <button class="btn btn-primary" onclick="saveChannel('qq')"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 一键接入</button>
+            </div>
+            <div class="channel-msg" id="chQqMsg"></div>
+          </div>
+        </div>
+
+        <!-- 飞书机器人 -->
+        <div class="channel-card" id="chFeishu">
+          <div class="channel-header" onclick="toggleChannel('feishu')">
+            <div class="channel-icon" style="background:linear-gradient(135deg,#3370ff,#2b5fd9)">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M2.572 7.29c0-.107.048-.18.144-.22a.243.243 0 0 1 .264.044l5.456 5.064c.072.068.108.152.108.252v8.736c0 .108-.048.18-.144.22a.243.243 0 0 1-.264-.044L2.68 16.278a.353.353 0 0 1-.108-.252V7.29zm8.064-4.86c0-.108.048-.18.144-.22a.243.243 0 0 1 .264.044l10.384 9.636c.072.068.108.152.108.252v8.736c0 .108-.048.18-.144.22a.243.243 0 0 1-.264-.044L10.744 11.418a.353.353 0 0 1-.108-.252V2.43z"/></svg>
+            </div>
+            <div class="channel-info">
+              <div class="channel-name">飞书机器人</div>
+              <div class="channel-desc">接入飞书自建应用机器人</div>
+            </div>
+            <div class="channel-status off" id="chFeishuStatus"><div class="channel-status-dot"></div>未接入</div>
+            <div class="channel-expand" id="chFeishuArrow"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+          </div>
+          <div class="channel-body" id="chFeishuBody">
+            <div class="channel-form">
+              <div class="form-group"><label>App ID</label><input id="chFeishuAppId" placeholder="飞书应用 App ID"></div>
+              <div class="form-group"><label>App Secret</label><input id="chFeishuAppSecret" placeholder="飞书应用 App Secret" type="password"></div>
+              <div class="form-group"><label>Verification Token</label><input id="chFeishuVerifyToken" placeholder="事件订阅 Verification Token"></div>
+              <div class="form-group"><label>Encrypt Key</label><input id="chFeishuEncryptKey" placeholder="事件订阅 Encrypt Key"></div>
+            </div>
+            <div class="channel-actions">
+              <button class="btn btn-outline" onclick="testChannel('feishu')"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> 测试连接</button>
+              <button class="btn btn-primary" onclick="saveChannel('feishu')"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 一键接入</button>
+            </div>
+            <div class="channel-msg" id="chFeishuMsg"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 </div>
 <script>
+// 全局错误处理，防止未捕获异常导致白屏
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('[UI] Unhandled Promise:', e.reason)
+  e.preventDefault()
+})
+window.onerror = (msg, src, line, col, err) => {
+  console.error('[UI] Error:', msg, src, line, err)
+  return true
+}
+
 const PROVIDERS = {
   deepseek:{name:'DeepSeek',baseUrl:'https://api.deepseek.com/v1',type:'openai',api:'openai-completions',
     models:['deepseek-chat','deepseek-reasoner'],
@@ -628,20 +1195,52 @@ api.onMaximized((isMax) => {
 let dashInfo = null // 管理面板用的安装信息
 let statusTimer = null
 
+function showInitError(message) {
+  const el = document.getElementById('dirError')
+  if (el) el.textContent = message || '启动初始化失败'
+}
+
+function enterDashboard(info) {
+  dashInfo = { installed: true, ...(info || {}) }
+  showDashboard()
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
-  // 启动时检测是否已安装
-  const result = await api.checkInstall()
-  if (result.installed) {
-    // 已安装 → 直接进管理面板
-    dashInfo = result
-    showDashboard()
-    return
-  }
-  // 未安装 → 正常安装流程
-  const info = await api.detectEnvironment()
   installDirPath = 'C:\\ProgramData\\openclaw'
   document.getElementById('installDir').value = installDirPath
-  detectEnv()
+
+  if (!window.api || typeof api.checkInstall !== 'function') {
+    showInitError('安装器初始化失败：预加载接口不可用')
+    return
+  }
+
+  try {
+    const result = await api.checkInstall()
+    if (result && result.installed) {
+      enterDashboard(result)
+      return
+    }
+  } catch (error) {
+    console.error('checkInstall failed:', error)
+  }
+
+  try {
+    const fallback = await api.getInstallInfo()
+    if (fallback && fallback.installed) {
+      enterDashboard(fallback)
+      return
+    }
+  } catch (error) {
+    console.error('getInstallInfo fallback failed:', error)
+    showInitError('读取本地安装信息失败，请重新打开安装器')
+  }
+
+  try {
+    await detectEnv()
+  } catch (error) {
+    console.error('detectEnvironment failed:', error)
+    showInitError('环境检测失败，请以管理员权限重试')
+  }
 })
 
 async function detectEnv() {
@@ -687,7 +1286,7 @@ function goPage2() {
   const sel=document.getElementById('modelSelect')
   if(p.models.length>0){
     sel.innerHTML='<option value="">-- 请选择模型 --</option>'
-    p.models.forEach(m=>{sel.innerHTML+='<option value="'+m+'">'+m+'</option>'})
+    p.models.forEach(m=>{sel.innerHTML+='<option value="'+esc(m)+'">'+esc(m)+'</option>'})
   } else {
     sel.innerHTML='<option value="">-- 填入 API Key 后点击「验证」获取 --</option>'
   }
@@ -707,7 +1306,7 @@ async function testAndFetch(){
   const testResult=await api.testApi({apiBase,apiKey})
   if(!testResult.success){
     btn.disabled=false
-    showApiStatus('error','连接失败：'+testResult.message)
+    showApiStatus('error','连接失败：'+esc(testResult.message))
     return
   }
   showApiStatus('success','API 连接成功')
@@ -717,7 +1316,7 @@ async function testAndFetch(){
   if(r.success&&r.models.length>0){
     const sel=document.getElementById('modelSelect')
     sel.innerHTML='<option value="">-- 共 '+r.models.length+' 个模型可用 --</option>'
-    r.models.forEach(m=>{sel.innerHTML+='<option value="'+m+'">'+m+'</option>'})
+    r.models.forEach(m=>{sel.innerHTML+='<option value="'+esc(m)+'">'+esc(m)+'</option>'})
     document.getElementById('modelStatus').innerHTML='<div class="api-status success">已获取 '+r.models.length+' 个模型</div>'
   } else if(r.success){
     document.getElementById('modelStatus').innerHTML='<div style="font-size:11px;color:#f59e0b;padding:4px 0">未返回模型列表，请手动输入模型名称</div>'
@@ -769,7 +1368,10 @@ function setInstallStep(n){
   if(currentStep>0){const el=document.getElementById('is'+currentStep);if(el)el.className='install-step done'}
   currentStep=n
   const el=document.getElementById('is'+n);if(el)el.className='install-step active'
-  document.getElementById('progressBar').style.width=PROGRESS[n]+'%'
+  const pb=document.getElementById('progressBar')
+  pb.style.width=PROGRESS[n]+'%'
+  pb.classList.add('active')
+  if(n>=5) setTimeout(()=>pb.classList.remove('active'),800)
 }
 
 function addLog(text,isErr){
@@ -788,7 +1390,7 @@ function showInstallError(msg){
   el.style.display='flex'
   el.style.flexDirection='column'
   el.style.gap='8px'
-  el.innerHTML='<div class="error-banner"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>'+msg+'</span></div><div class="btn-row"><button class="btn btn-outline" onclick="goBackFromError()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg> 返回配置</button><button class="btn btn-primary" onclick="retryInstall()"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 重试</button></div>'
+  el.innerHTML='<div class="error-banner"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>'+esc(msg)+'</span></div><div class="btn-row"><button class="btn btn-outline" onclick="goBackFromError()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg> 返回配置</button><button class="btn btn-primary" onclick="retryInstall()"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 重试</button></div>'
 }
 
 function goBackFromError(){
@@ -859,7 +1461,7 @@ function doInstall(){
 
 function openClaw(){
   if (dashInfo) { api.openWebchat(dashInfo); return }
-  const url=finalUrl+'/#token='+finalToken
+  const url=finalToken ? finalUrl+'?gatewayUrl='+encodeURIComponent('ws://127.0.0.1:'+(finalUrl.split(':').pop()||'18789'))+'&token='+encodeURIComponent(finalToken) : finalUrl
   api.openUrl(url)
 }
 function openInstallDir(){api.openFolder(finalInstallDir||installDirPath)}
@@ -871,6 +1473,16 @@ function openDocs(){api.openUrl('https://docs.openclaw.ai')}
 
 // ─── 安装完成页：启动并打开浏览器 ───
 async function launchFromDone() {
+  // License 检查
+  const dir = finalInstallDir || installDirPath
+  if (dir) {
+    const lic = await api.licenseCheck(dir)
+    if (!lic.activated) {
+      dashInfo = dashInfo || { installDir: dir, port: parseInt(finalUrl.split(':').pop()) || 18789, token: finalToken }
+      showLicenseOverlay()
+      return
+    }
+  }
   const btn = document.getElementById('doneOpenBtn')
   btn.disabled = true
   btn.innerHTML = '<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> 正在启动...'
@@ -881,7 +1493,7 @@ async function launchFromDone() {
     btn.style.opacity = '0.7'
   } else {
     btn.disabled = false
-    btn.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> 启动失败: ' + (result.error || '未知错误')
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> 启动失败: ' + esc(result.error || '未知错误')
     btn.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)'
     setTimeout(() => {
       btn.style.background = ''
@@ -891,28 +1503,118 @@ async function launchFromDone() {
 }
 
 // ─── 管理面板 ───
-function showDashboard() {
-  // 隐藏安装流程的 steps 和 logo
+async function showDashboard() {
+  try {
+    // License 检查（强制）
+    const licDir = (dashInfo && dashInfo.installDir) || installDirPath || 'C:\\ProgramData\\openclaw'
+    console.log('[LICENSE] checking dir:', licDir, 'dashInfo:', JSON.stringify(dashInfo))
+    try {
+      const lic = await api.licenseCheck(licDir)
+      console.log('[LICENSE] result:', JSON.stringify(lic))
+      if (!lic.activated) {
+        if (!dashInfo) dashInfo = { installDir: licDir }
+        showLicenseOverlay()
+        return
+      }
+    } catch (licErr) {
+      console.error('[LICENSE] check error:', licErr)
+      if (!dashInfo) dashInfo = { installDir: licDir }
+      showLicenseOverlay()
+      return
+    }
+    document.getElementById('licenseOverlay').style.display = 'none'
+    document.querySelector('.steps').style.display = 'none'
+    document.querySelector('.logo').style.display = 'none'
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+    document.getElementById('page5').classList.add('active')
+
+    if (dashInfo) {
+      document.getElementById('dashUrl').textContent = dashInfo.url || ('http://127.0.0.1:' + (dashInfo.port || 18789))
+      document.getElementById('dashDir').textContent = dashInfo.installDir || '-'
+      document.getElementById('dashVersion').textContent = 'v' + (dashInfo.version || '1.0.0')
+      if (dashInfo.installedAt) {
+        const d = new Date(dashInfo.installedAt)
+        if (!isNaN(d.getTime())) {
+          document.getElementById('dashVersion').textContent += ' · 安装于 ' + d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate()
+        }
+      }
+    }
+    updateGatewayStatus()
+    loadCurrentModel()
+    if (statusTimer) clearInterval(statusTimer)
+    statusTimer = setInterval(updateGatewayStatus, 5000)
+    // License 心跳：每10秒验证一次，失效立即弹激活界面
+    if (window._licTimer) clearInterval(window._licTimer)
+    window._licTimer = setInterval(async () => {
+      if (dashInfo && dashInfo.installDir) {
+        const lic = await api.licenseCheck(dashInfo.installDir)
+        if (!lic.activated) {
+          clearInterval(window._licTimer)
+          // 停止 Gateway
+          try { await api.stopGateway(dashInfo.port || 18789) } catch {}
+          showLicenseOverlay()
+        }
+      }
+    }, 10000)
+  } catch (error) {
+    document.title = 'showDashboard ERR: ' + error.message
+    console.error('showDashboard failed:', error)
+    showInitError('进入管理面板失败，请重新打开安装器')
+  }
+}
+
+function showLicenseOverlay() {
   document.querySelector('.steps').style.display = 'none'
   document.querySelector('.logo').style.display = 'none'
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
-  document.getElementById('page5').classList.add('active')
+  const overlay = document.getElementById('licenseOverlay')
+  overlay.style.display = 'flex'
+  document.getElementById('licenseKeyInput').focus()
+}
 
-  if (dashInfo) {
-    document.getElementById('dashUrl').textContent = dashInfo.url || ('http://127.0.0.1:' + (dashInfo.port || 18789))
-    document.getElementById('dashDir').textContent = dashInfo.installDir || '-'
-    document.getElementById('dashVersion').textContent = 'v' + (dashInfo.version || '1.0.0')
-    if (dashInfo.installedAt) {
-      const d = new Date(dashInfo.installedAt)
-      document.getElementById('dashVersion').textContent += ' · 安装于 ' + d.toLocaleDateString('zh-CN')
-    }
+async function activateLicense() {
+  const btn = document.getElementById('licenseBtn')
+  const errEl = document.getElementById('licenseError')
+  const sucEl = document.getElementById('licenseSuccess')
+  const input = document.getElementById('licenseKeyInput')
+  const key = input.value.trim().toUpperCase()
+
+  errEl.style.display = 'none'
+  sucEl.style.display = 'none'
+
+  if (!key || !key.match(/^OC-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+    errEl.textContent = '请输入有效的 License Key（格式：OC-XXXX-XXXX-XXXX）'
+    errEl.style.display = 'block'
+    input.style.borderColor = '#f87171'
+    return
   }
-  updateGatewayStatus()
-  // 加载当前模型
-  loadCurrentModel()
-  // 每 5 秒刷新状态
-  if (statusTimer) clearInterval(statusTimer)
-  statusTimer = setInterval(updateGatewayStatus, 5000)
+
+  btn.disabled = true
+  btn.innerHTML = '<svg style="width:16px;height:16px;animation:spin 1s linear infinite" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke="currentColor" fill="none" stroke-width="2"/></svg> 激活中...'
+
+  try {
+    const res = await api.licenseActivate(dashInfo.installDir, key)
+    if (res.success) {
+      sucEl.textContent = '✓ 激活成功！正在进入管理面板...'
+      sucEl.style.display = 'block'
+      input.style.borderColor = '#10b981'
+      setTimeout(() => {
+        document.getElementById('licenseOverlay').style.display = 'none'
+        showDashboard()
+      }, 1200)
+    } else {
+      errEl.textContent = res.error || '激活失败，请检查 License Key'
+      errEl.style.display = 'block'
+      input.style.borderColor = '#f87171'
+      btn.disabled = false
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> 激活'
+    }
+  } catch (e) {
+    errEl.textContent = '网络错误：' + e.message
+    errEl.style.display = 'block'
+    btn.disabled = false
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> 激活'
+  }
 }
 
 async function loadCurrentModel() {
@@ -924,20 +1626,51 @@ async function loadCurrentModel() {
 
 async function updateGatewayStatus() {
   const port = dashInfo ? (dashInfo.port || 18789) : 18789
-  const result = await api.checkGateway(port)
   const el = document.getElementById('dashStatus')
   const launchBtn = document.getElementById('dashLaunchBtn')
   const stopBtn = document.getElementById('dashStopBtn')
-  if (result.running) {
-    el.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block"></span> 运行中'
-    el.style.background = '#052e16'; el.style.color = '#10b981'; el.style.borderColor = '#065f46'
-    launchBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> 打开 OpenClaw'
-    stopBtn.disabled = false
-  } else {
-    el.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block"></span> 已停止'
-    el.style.background = '#2d0a0a'; el.style.color = '#f87171'; el.style.borderColor = '#7f1d1d'
-    launchBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px"><polygon points="5 3 19 12 5 21 5 3" fill="white" stroke="none"/></svg> 启动 OpenClaw'
+  const restartBtn = document.getElementById('dashRestartBtn')
+  const gwStatusBox = document.getElementById('gwStatusBox')
+  const gwStatusText = document.getElementById('gwStatusText')
+  const gwUptimeText = document.getElementById('gwUptimeText')
+
+  try {
+    const result = await api.checkGateway(dashInfo?.port || port)
+    if (result.running) {
+      el.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block"></span> 运行中'
+      el.style.background = '#052e16'; el.style.color = '#10b981'; el.style.borderColor = '#065f46'
+      launchBtn.disabled = false
+      launchBtn.style.background = ''
+      launchBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> 打开 OpenClaw'
+      stopBtn.disabled = false
+      if (restartBtn) restartBtn.disabled = false
+      if (gwStatusBox) gwStatusBox.style.borderLeftColor = '#10b981'
+      if (gwStatusText) { gwStatusText.textContent = '● 运行中'; gwStatusText.style.color = '#10b981' }
+      if (gwUptimeText) gwUptimeText.textContent = '端口 ' + port
+    } else {
+      el.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block"></span> 已停止'
+      el.style.background = '#2d0a0a'; el.style.color = '#f87171'; el.style.borderColor = '#7f1d1d'
+      launchBtn.disabled = false
+      launchBtn.style.background = ''
+      launchBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px"><polygon points="5 3 19 12 5 21 5 3" fill="white" stroke="none"/></svg> 启动 OpenClaw'
+      stopBtn.disabled = true
+      if (restartBtn) restartBtn.disabled = true
+      if (gwStatusBox) gwStatusBox.style.borderLeftColor = '#ef4444'
+      if (gwStatusText) { gwStatusText.textContent = '● 已停止'; gwStatusText.style.color = '#ef4444' }
+      if (gwUptimeText) gwUptimeText.textContent = '点击启动按钮开始'
+    }
+  } catch (error) {
+    console.error('updateGatewayStatus failed:', error)
+    el.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#f59e0b;display:inline-block"></span> 状态异常'
+    el.style.background = '#3a2205'; el.style.color = '#f59e0b'; el.style.borderColor = '#92400e'
+    launchBtn.disabled = false
+    launchBtn.style.background = ''
+    launchBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px"><polygon points="5 3 19 12 5 21 5 3" fill="white" stroke="none"/></svg> 重试打开 OpenClaw'
     stopBtn.disabled = true
+    if (restartBtn) restartBtn.disabled = true
+    if (gwStatusBox) gwStatusBox.style.borderLeftColor = '#f59e0b'
+    if (gwStatusText) { gwStatusText.textContent = '● 状态异常'; gwStatusText.style.color = '#f59e0b' }
+    if (gwUptimeText) gwUptimeText.textContent = error && error.message ? error.message : '状态检测失败'
   }
 }
 
@@ -948,9 +1681,18 @@ async function launchOpenClaw() {
   const result = await api.openWebchat(dashInfo)
   btn.disabled = false
   if (result.success) {
-    updateGatewayStatus()
+    // 显示 Token 复制提示
+    if (result.token) {
+      const copied = await api.copyToClipboard(result.token)
+      if (copied) {
+        showToast('✅ Token 已复制到剪贴板，请在浏览器中粘贴登录', 'success')
+      } else {
+        showToast('⚠️ Token: ' + result.token.slice(0, 16) + '...（请手动复制）', 'warning')
+      }
+    }
+    await updateGatewayStatus()
   } else {
-    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' + (result.error || '启动失败')
+    btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' + esc(result.error || '启动失败')
     btn.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)'
     setTimeout(() => { btn.style.background = ''; updateGatewayStatus() }, 3000)
   }
@@ -960,10 +1702,36 @@ async function dashStopGateway() {
   const btn = document.getElementById('dashStopBtn')
   btn.disabled = true
   btn.innerHTML = '<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> 停止中...'
-  const port = dashInfo ? (dashInfo.port || 18789) : 18789
-  await api.stopGateway(port)
-  await new Promise(r => setTimeout(r, 1500))
+  try {
+    const result = await api.stopGateway(dashInfo?.port || port)
+    await new Promise(r => setTimeout(r, 1500))
+    if (!result.success) dashToast(result.error || '停止失败', 'error')
+    else dashToast('Gateway 已停止')
+  } catch (e) {
+    dashToast('停止失败: ' + e.message, 'error')
+  }
+  btn.disabled = false
   btn.innerHTML = '<svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg> 停止 Gateway'
+  updateGatewayStatus()
+}
+
+async function dashRestartGateway() {
+  const btn = document.getElementById('dashRestartBtn')
+  btn.disabled = true
+  btn.innerHTML = '<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> 重启中...'
+  try {
+    const result = await api.restartGateway(dashInfo)
+    await new Promise(r => setTimeout(r, 3000))
+    if (result && result.success) {
+      dashToast('Gateway 已重启')
+    } else {
+      dashToast(result?.error || '重启失败，请检查状态', 'error')
+    }
+  } catch (e) {
+    dashToast('重启失败: ' + e.message, 'error')
+  }
+  btn.disabled = false
+  btn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> 重启 Gateway'
   updateGatewayStatus()
 }
 
@@ -992,6 +1760,7 @@ function switchDashTab(tab) {
   if (tab === 'system') refreshSystemInfo()
   if (tab === 'logs') refreshLogs()
   if (tab === 'repair') {} // 不自动运行，等用户点按钮
+  if (tab === 'channels') loadChannelStatus()
 }
 
 // ─── Dashboard Toast ───
@@ -1011,7 +1780,7 @@ let selectedNewModel = null // { provider, model }
 async function loadModelPanel() {
   const configResult = await api.getConfig(dashInfo?.installDir)
   if (!configResult.success) {
-    document.getElementById('modelList').innerHTML = '<div style="text-align:center;padding:20px;color:#f87171;font-size:12px">读取配置失败: ' + (configResult.error || '') + '</div>'
+    document.getElementById('modelList').innerHTML = '<div style="text-align:center;padding:20px;color:#f87171;font-size:12px">读取配置失败: ' + esc(configResult.error || '') + '</div>'
     return
   }
   configProviders = configResult.providers || []
@@ -1021,6 +1790,7 @@ async function loadModelPanel() {
 
   // 先显示配置中已有的模型
   renderModelList(configProviders, currentModel)
+  renderProviderList()
 
   // 后台获取 API 可用模型
   document.getElementById('refreshModelsBtn').disabled = true
@@ -1089,30 +1859,196 @@ async function applyModelSwitch() {
   btn.disabled = true
   btn.innerHTML = '<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> 切换中...'
 
-  const result = await api.switchModel({ installDir: dashInfo?.installDir, providerName: selectedNewModel.provider, modelId: selectedNewModel.model })
-  if (!result.success) {
-    dashToast('切换失败: ' + (result.error || ''), 'error')
+  try {
+    const result = await api.switchModel({ installDir: dashInfo?.installDir, providerName: selectedNewModel.provider, modelId: selectedNewModel.model })
+    if (!result.success) {
+      dashToast('切换失败: ' + (result.error || ''), 'error')
+      btn.disabled = false
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 应用并重启 Gateway'
+      return
+    }
+
+    if (result.success) {
+      dashToast('模型已切换，正在重启 Gateway...')
+      document.getElementById('modelCurrentName').textContent = result.model
+      document.getElementById('dashModel').textContent = result.model
+      selectedNewModel = null
+      renderModelList(configProviders, result.model)
+
+      try {
+        const restartResult = await api.restartGateway(dashInfo)
+        if (restartResult && restartResult.success) {
+          dashToast('已切换到 ' + result.model + '，Gateway 已重启')
+        } else {
+          dashToast('模型已切换，但 Gateway 重启失败: ' + (restartResult?.error || ''), 'error')
+        }
+      } catch (restartErr) {
+        dashToast('模型已切换，但 Gateway 重启异常: ' + restartErr.message, 'error')
+      }
+
+      btn.disabled = true
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 应用并重启 Gateway'
+      updateGatewayStatus()
+    } else {
+      dashToast('切换失败: ' + (result.error || ''), 'error')
+      btn.disabled = false
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 应用并重启 Gateway'
+    }
+  } catch (e) {
+    dashToast('切换失败: ' + e.message, 'error')
     btn.disabled = false
     btn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 应用并重启 Gateway'
+  }
+}
+
+// ─── Provider Management ───
+const PROVIDER_QUICK_PICKS = {
+  deepseek: { name: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', api: 'openai-completions', color: '#0A6CFF' },
+  openai: { name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', api: 'openai-responses', color: '#10a37f' },
+  claude: { name: 'Claude (Anthropic)', baseUrl: 'https://api.anthropic.com/v1', api: 'anthropic-messages', color: '#D97706' },
+  qwen: { name: '通义千问', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', api: 'openai-completions', color: '#6236FF' },
+  zhipu: { name: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', api: 'openai-completions', color: '#3B82F6' },
+  kimi: { name: 'Kimi (Moonshot)', baseUrl: 'https://api.moonshot.cn/v1', api: 'openai-completions', color: '#1a1a2e' },
+  siliconflow: { name: '硅基流动', baseUrl: 'https://api.siliconflow.cn/v1', api: 'openai-completions', color: '#8B5CF6' },
+  doubao: { name: '豆包 (火山引擎)', baseUrl: 'https://ark.cn-beijing.volces.com/api/v3', api: 'openai-completions', color: '#00D4AA' },
+  gemini: { name: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta', api: 'google', color: '#4285F4' },
+  groq: { name: 'Groq', baseUrl: 'https://api.groq.com/openai/v1', api: 'openai-completions', color: '#F55036' },
+  together: { name: 'Together AI', baseUrl: 'https://api.together.xyz/v1', api: 'openai-completions', color: '#0EA5E9' }
+}
+
+let editingProviderName = null
+
+function renderProviderList() {
+  const container = document.getElementById('providerList')
+  if (!configProviders || configProviders.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:16px;color:#4a4a6a;font-size:11px">暂无服务商，点击上方"添加服务商"开始配置</div>'
     return
   }
+  let html = ''
+  for (const prov of configProviders) {
+    const preset = Object.values(PROVIDER_QUICK_PICKS).find(p => prov.name.toLowerCase().includes(Object.keys(PROVIDER_QUICK_PICKS).find(k => prov.name.toLowerCase().includes(k)) || '___'))
+    const color = preset?.color || '#6366f1'
+    const maskedKey = prov.apiKey ? (prov.apiKey.substring(0, 6) + '...' + prov.apiKey.slice(-4)) : '未设置'
+    html += '<div class="prov-item">'
+    html += '<div class="prov-color" style="background:' + color + '"></div>'
+    html += '<div class="prov-name">' + esc(prov.name) + '</div>'
+    html += '<div class="prov-key">' + esc(maskedKey) + '</div>'
+    html += '<div class="prov-actions">'
+    html += '<button title="编辑" onclick="editProvider(\'' + esc(prov.name) + '\')"><svg viewBox="0 0 24 24" style="width:13px;height:13px" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'
+    html += '<button class="del" title="删除" onclick="deleteProviderConfirm(\'' + esc(prov.name) + '\')"><svg viewBox="0 0 24 24" style="width:13px;height:13px" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>'
+    html += '</div></div>'
+  }
+  container.innerHTML = html
+}
 
-  // 重启 Gateway
-  btn.innerHTML = '<svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:16px;height:16px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> 重启 Gateway...'
-  const restartResult = await api.restartGateway(dashInfo)
-  if (restartResult.success) {
-    dashToast('已切换到 ' + selectedNewModel.model)
-    document.getElementById('modelCurrentName').textContent = result.model
-    document.getElementById('dashModel').textContent = result.model
-    selectedNewModel = null
-    btn.disabled = true
-    btn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 应用并重启 Gateway'
-    renderModelList(configProviders, result.model)
-    updateGatewayStatus()
-  } else {
-    dashToast('Gateway 重启失败: ' + (restartResult.error || ''), 'error')
-    btn.disabled = false
-    btn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> 应用并重启 Gateway'
+function showAddProviderDialog() {
+  editingProviderName = null
+  document.getElementById('providerModalTitle').textContent = '添加服务商'
+  document.getElementById('pmName').value = ''
+  document.getElementById('pmName').disabled = false
+  document.getElementById('pmBaseUrl').value = ''
+  document.getElementById('pmApiKey').value = ''
+  document.getElementById('pmApiType').value = 'openai-completions'
+  document.getElementById('pmTestResult').textContent = ''
+  renderQuickPicks()
+  document.getElementById('providerModal').style.display = 'flex'
+}
+
+function editProvider(name) {
+  editingProviderName = name
+  const prov = configProviders.find(p => p.name === name)
+  if (!prov) return
+  document.getElementById('providerModalTitle').textContent = '编辑 ' + name
+  document.getElementById('pmName').value = name
+  document.getElementById('pmName').disabled = true
+  document.getElementById('pmBaseUrl').value = prov.baseUrl || ''
+  document.getElementById('pmApiKey').value = prov.apiKeyMasked || prov.apiKey || ''
+  document.getElementById('pmApiType').value = prov.api || 'openai-completions'
+  document.getElementById('pmTestResult').textContent = ''
+  renderQuickPicks(name)
+  document.getElementById('providerModal').style.display = 'flex'
+}
+
+function closeProviderModal() {
+  document.getElementById('providerModal').style.display = 'none'
+  editingProviderName = null
+}
+
+function renderQuickPicks(activeName) {
+  const container = document.getElementById('providerQuickPicks')
+  let html = ''
+  for (const [key, preset] of Object.entries(PROVIDER_QUICK_PICKS)) {
+    const isActive = activeName && activeName.toLowerCase().includes(key)
+    html += '<button class="quick-pick' + (isActive ? ' active' : '') + '" onclick="applyQuickPick(\'' + key + '\')">' + preset.name + '</button>'
+  }
+  container.innerHTML = html
+}
+
+function applyQuickPick(key) {
+  const preset = PROVIDER_QUICK_PICKS[key]
+  if (!preset) return
+  if (!editingProviderName) document.getElementById('pmName').value = key
+  document.getElementById('pmBaseUrl').value = preset.baseUrl
+  document.getElementById('pmApiType').value = preset.api
+  // 不覆盖已有的 API Key
+  renderQuickPicks(key)
+}
+
+async function testProviderInModal() {
+  const baseUrl = document.getElementById('pmBaseUrl').value.trim()
+  const apiKey = document.getElementById('pmApiKey').value.trim()
+  const resultEl = document.getElementById('pmTestResult')
+  if (!baseUrl || !apiKey) { resultEl.style.color = '#f87171'; resultEl.textContent = '请填写 Base URL 和 API Key'; return }
+  resultEl.style.color = '#94a3b8'; resultEl.textContent = '测试中...'
+  try {
+    const r = await api.testApi({ apiBase: baseUrl, apiKey })
+    if (r.success) { resultEl.style.color = '#10b981'; resultEl.textContent = '连接成功' }
+    else { resultEl.style.color = '#f87171'; resultEl.textContent = '连接失败: ' + (r.error || '') }
+  } catch (e) { resultEl.style.color = '#f87171'; resultEl.textContent = '测试出错: ' + e.message }
+}
+
+async function saveProviderFromModal() {
+  const name = document.getElementById('pmName').value.trim()
+  const baseUrl = document.getElementById('pmBaseUrl').value.trim()
+  const apiKey = document.getElementById('pmApiKey').value.trim()
+  const apiType = document.getElementById('pmApiType').value
+  if (!name) { dashToast('请填写服务商名称', 'error'); return }
+  if (!baseUrl) { dashToast('请填写 API Base URL', 'error'); return }
+  if (!apiKey) { dashToast('请填写 API Key', 'error'); return }
+
+  const btn = document.getElementById('pmSaveBtn')
+  btn.disabled = true
+  btn.textContent = '保存中...'
+  try {
+    const r = await api.saveProvider({ installDir: dashInfo?.installDir, providerName: name, baseUrl, apiKey, api: apiType })
+    if (r.success) {
+      dashToast(editingProviderName ? '已更新 ' + name : '已添加 ' + name)
+      closeProviderModal()
+      await loadModelPanel()
+      renderProviderList()
+    } else {
+      dashToast('保存失败: ' + (r.error || ''), 'error')
+    }
+  } catch (e) {
+    dashToast('保存失败: ' + e.message, 'error')
+  }
+  btn.disabled = false
+  btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> 保存'
+}
+
+async function deleteProviderConfirm(name) {
+  if (!confirm('确定删除服务商 "' + name + '"？\n删除后该服务商下的所有模型将不可用。')) return
+  try {
+    const r = await api.deleteProvider({ installDir: dashInfo?.installDir, providerName: name })
+    if (r.success) {
+      dashToast('已删除 ' + name)
+      await loadModelPanel()
+      renderProviderList()
+    } else {
+      dashToast('删除失败: ' + (r.error || ''), 'error')
+    }
+  } catch (e) {
+    dashToast('删除失败: ' + e.message, 'error')
   }
 }
 
@@ -1156,16 +2092,69 @@ async function refreshSystemInfo() {
 }
 
 // ─── Log Viewer ───
+let logRawContent = ''
+let autoRefreshTimer = null
+
 async function refreshLogs() {
   const viewer = document.getElementById('logViewer')
   viewer.textContent = '加载中...'
   const result = await api.getGatewayLogs(dashInfo?.installDir)
   if (result.success) {
-    viewer.textContent = result.logs || '暂无日志'
+    logRawContent = result.logs || '暂无日志'
+    const lines = logRawContent.split('\n')
+    document.getElementById('logStats').textContent = lines.length + ' 行'
+    applyLogSearch()
     viewer.scrollTop = viewer.scrollHeight
   } else {
     viewer.textContent = '加载失败: ' + (result.error || '')
   }
+}
+
+function searchLogs() {
+  applyLogSearch()
+}
+
+function applyLogSearch() {
+  const viewer = document.getElementById('logViewer')
+  const keyword = (document.getElementById('logSearchInput').value || '').trim()
+  if (!keyword) {
+    viewer.textContent = logRawContent
+    document.getElementById('logStats').textContent = logRawContent.split('\n').length + ' 行'
+    viewer.scrollTop = viewer.scrollHeight
+    return
+  }
+  const lines = logRawContent.split('\n')
+  const matched = lines.filter(l => l.toLowerCase().includes(keyword.toLowerCase()))
+  document.getElementById('logStats').textContent = '匹配 ' + matched.length + ' / ' + lines.length + ' 行'
+  // 高亮显示
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp('(' + escaped + ')', 'gi')
+  viewer.innerHTML = matched.map(l => esc(l).replace(regex, '<mark style="background:#f59e0b33;color:#f59e0b;border-radius:2px;padding:0 2px">$1</mark>')).join('\n') || '<span style="color:#64748b">无匹配结果</span>'
+  viewer.scrollTop = 0
+}
+
+function toggleAutoRefreshLogs() {
+  const btn = document.getElementById('autoRefreshBtn')
+  const status = document.getElementById('autoRefreshStatus')
+  if (autoRefreshTimer) {
+    clearInterval(autoRefreshTimer)
+    autoRefreshTimer = null
+    btn.style.background = ''
+    btn.style.color = ''
+    status.textContent = ''
+  } else {
+    autoRefreshTimer = setInterval(refreshLogs, 3000)
+    btn.style.background = '#10b98133'
+    btn.style.color = '#10b981'
+    status.textContent = '● 实时刷新中（3秒）'
+    refreshLogs()
+  }
+}
+
+async function exportLogs() {
+  const result = await api.exportLogs(dashInfo?.installDir)
+  if (result.success) dashToast('日志已导出: ' + result.path)
+  else dashToast(result.error || '导出失败')
 }
 
 // ─── Diagnose & Repair ───
@@ -1184,18 +2173,19 @@ async function runDiagnose() {
 
   // 显示检查中状态
   const checkList = document.getElementById('checkList')
-  const checkNames = ['安装目录','配置文件','访问凭证','Node.js 运行时','OpenClaw 核心','端口检测','开机自启','桌面快捷方式','文件权限','磁盘空间']
+  const checkNames = ['安装目录','配置文件','配置完整性','访问凭证','Node.js 运行时','Node.js 版本','API Key 有效性','OpenClaw 核心','端口检测','进程冲突','开机自启','桌面快捷方式','文件权限','磁盘空间','日志文件','OpenClaw 版本','API 连通性','网络代理','Defender 排除','配置备份','环境变量','工作区目录','崩溃日志分析','自启脚本健康','临时文件清理','总体健康评分']
   checkList.innerHTML = checkNames.map(n => `<div class="check-item"><div class="ci-icon checking">${CHECK_ICONS.checking}</div><div class="ci-body"><div class="ci-name">${n}</div><div class="ci-detail">检测中...</div></div></div>`).join('')
   document.getElementById('repairSummary').style.display = 'none'
 
-  const result = await api.diagnoseAndRepair(dashInfo?.installDir)
+  try {
+    const result = await api.diagnoseAndRepair(dashInfo?.installDir)
 
-  if (!result.success) {
-    checkList.innerHTML = '<div style="text-align:center;padding:20px;color:#f87171;font-size:12px">' + (result.error || '诊断失败') + '</div>'
-    btn.disabled = false
-    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> 重新诊断'
-    return
-  }
+    if (!result.success) {
+      checkList.innerHTML = '<div style="text-align:center;padding:20px;color:#f87171;font-size:12px">' + esc(result.error || '诊断失败') + '</div>'
+      btn.disabled = false
+      btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> 重新诊断'
+      return
+    }
 
   // 渲染结果
   const checks = result.checks || []
@@ -1225,12 +2215,379 @@ async function runDiagnose() {
     if (fixedCount > 0) dashToast('已修复 ' + fixedCount + ' 项，仍有 ' + (warnCount + errorCount) + ' 项需注意')
   }
 
+  // 记录诊断时间
+  const now = new Date()
+  const timeStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0')
+  document.getElementById('lastDiagnoseTime').textContent = '上次诊断: ' + timeStr + ' · 共 ' + checks.length + ' 项检查'
+
   // 如果修复了东西，刷新 dashInfo
   if (fixedCount > 0) {
     const newInfo = await api.checkInstall()
     if (newInfo.installed) { dashInfo = newInfo; updateGatewayStatus() }
   }
+  } catch (e) {
+    checkList.innerHTML = '<div style="text-align:center;padding:20px;color:#f87171;font-size:12px">诊断异常: ' + esc(e.message) + '</div>'
+  }
+  btn.disabled = false
+  if (btn.className !== 'btn btn-success') {
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> 重新诊断'
+    btn.className = 'btn btn-primary'
+  }
 }
+
+// ─── Channel Integration ───
+const CHANNEL_DEFS = {
+  wechat: {
+    key: 'openclaw-weixin',
+    name: '微信个人号',
+    fields: [
+      { id: 'chWechatDataDir', cfg: 'dataDir' }
+    ]
+  },
+  qq: {
+    key: 'qqbot',
+    name: 'QQ 机器人',
+    fields: [
+      { id: 'chQqAppId', cfg: 'appId' },
+      { id: 'chQqAppSecret', cfg: 'clientSecret' },
+      { id: 'chQqToken', cfg: 'token' }
+    ]
+  },
+  feishu: {
+    key: 'feishu',
+    name: '飞书机器人',
+    fields: [
+      { id: 'chFeishuAppId', cfg: 'appId' },
+      { id: 'chFeishuAppSecret', cfg: 'appSecret' },
+      { id: 'chFeishuVerifyToken', cfg: 'verificationToken' },
+      { id: 'chFeishuEncryptKey', cfg: 'encryptKey' }
+    ]
+  }
+}
+
+function toggleChannel(ch) {
+  const body = document.getElementById('ch' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Body')
+  const arrow = document.getElementById('ch' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Arrow')
+  const isOpen = body.classList.contains('open')
+  body.classList.toggle('open')
+  arrow.classList.toggle('open')
+}
+
+function setChannelMsg(ch, msg, type) {
+  const el = document.getElementById('ch' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Msg')
+  if (!el) return
+  el.style.cssText = 'font-size:11px;padding:6px 0;' + (type === 'error' ? 'color:#f87171' : type === 'success' ? 'color:#10b981' : 'color:#64748b')
+  el.textContent = msg
+  if (msg) setTimeout(() => { if (el.textContent === msg) el.textContent = '' }, 5000)
+}
+
+function updateChannelStatusUI(ch, connected) {
+  const capCh = ch.charAt(0).toUpperCase() + ch.slice(1)
+  const statusEl = document.getElementById('ch' + capCh + 'Status')
+  const cardEl = document.getElementById('ch' + capCh)
+  if (statusEl) {
+    statusEl.className = 'channel-status ' + (connected ? 'on' : 'off')
+    statusEl.innerHTML = '<div class="channel-status-dot"></div>' + (connected ? '已接入' : '未接入')
+  }
+  if (cardEl) {
+    if (connected) cardEl.classList.add('connected')
+    else cardEl.classList.remove('connected')
+  }
+}
+
+function getChannelFormData(ch) {
+  const def = CHANNEL_DEFS[ch]
+  if (!def) return null
+  const data = {}
+  for (const f of def.fields) {
+    if (f.readonly) continue
+    data[f.cfg] = document.getElementById(f.id)?.value?.trim() || ''
+  }
+  return data
+}
+
+function fillChannelForm(ch, cfg) {
+  const def = CHANNEL_DEFS[ch]
+  if (!def || !cfg) return
+  for (const f of def.fields) {
+    const el = document.getElementById(f.id)
+    if (el && cfg[f.cfg]) el.value = cfg[f.cfg]
+  }
+}
+
+async function loadChannelStatus() {
+  const result = await api.loadChannelConfig(dashInfo?.installDir)
+  if (!result.success) return
+  // 同时检查 channels 和 plugins.entries（微信等插件配置在 plugins 里）
+  const channels = result.channels || {}
+  const plugins = result.plugins || {}
+  for (const [ch, def] of Object.entries(CHANNEL_DEFS)) {
+    const cfg = channels[def.key] || plugins[def.key]
+    const connected = cfg && cfg.enabled
+    updateChannelStatusUI(ch, connected)
+    // 填充表单时优先用 channels 的配置（含 appId 等），其次 plugins
+    const formCfg = channels[def.key] || (plugins[def.key]?.config) || plugins[def.key]
+    if (formCfg) fillChannelForm(ch, formCfg)
+  }
+}
+
+// ─── 微信 openclaw-weixin 插件 ───
+function normalizeCommandOutput(result) {
+  if (!result) return ''
+  return String(result.output || result.stderr || result.error || '').trim()
+}
+
+function extractWeixinQrPayload(result) {
+  if (!result) return null
+  if (result.qrUrl) return { type: 'url', value: result.qrUrl }
+  if (result.qrBase64) return { type: 'base64', value: result.qrBase64 }
+
+  // 即使命令超时/失败，也尝试从输出中提取二维码 URL
+  const output = normalizeCommandOutput(result)
+  // 优先匹配微信扫码链接
+  const wxUrlMatch = output.match(/https:\/\/liteapp\.weixin\.qq\.com\/\S+/)
+  if (wxUrlMatch) return { type: 'url', value: wxUrlMatch[0] }
+  const urlMatch = output.match(/https?:\/\/\S+/)
+  if (urlMatch) return { type: 'url', value: urlMatch[0] }
+
+  const base64Match = output.match(/(?:data:image\/png;base64,)?([A-Za-z0-9+/=]{200,})/)
+  if (base64Match) return { type: 'base64', value: base64Match[1] }
+  return null
+}
+
+function looksLikeWeixinLoggedIn(result) {
+  if (!result || !result.success) return false
+  if (result.loggedIn || result.connected || result.ready) return true
+  const output = normalizeCommandOutput(result).toLowerCase()
+  return output.includes('logged in') || output.includes('connected') || output.includes('ready') || output.includes('已登录')
+}
+
+function setButtonBusy(buttonId, busy, busyText) {
+  const btn = document.getElementById(buttonId)
+  if (!btn) return
+  if (!btn.dataset.originalHtml) btn.dataset.originalHtml = btn.innerHTML
+  btn.disabled = !!busy
+  btn.innerHTML = busy ? (busyText || btn.dataset.originalHtml) : btn.dataset.originalHtml
+}
+
+// 安全命令执行：使用白名单 API 替代通用 runCommand
+async function runOpenClawSafe(subcommand, args) {
+  return await api.runOpenclawCmd({ installDir: dashInfo?.installDir, subcommand, args })
+}
+
+async function runWeixinCommand(commandSets) {
+  // commandSets 现在是 [[subcommand, ...args], ...] 格式
+  let lastResult = null
+  for (const cmdArgs of commandSets) {
+    const sub = cmdArgs[0]
+    const args = cmdArgs.slice(1)
+    const result = await api.runOpenclawCmd({ installDir: dashInfo?.installDir, subcommand: sub, args })
+    if (result.success) {
+      return { ...result, command: cmdArgs.join(' ') }
+    }
+    lastResult = { ...result, command: cmdArgs.join(' ') }
+  }
+  return lastResult || { success: false, error: '微信命令执行失败' }
+}
+
+async function installWeixinPlugin() {
+  const msgEl = document.getElementById('chWechatMsg')
+  msgEl.style.color = '#94a3b8'
+  msgEl.textContent = '正在安装 @tencent-weixin/openclaw-weixin 插件...'
+  setButtonBusy('wechatInstallBtn', true, '安装中...')
+  try {
+    const r = await api.installWeixinPlugin(dashInfo?.installDir)
+    if (r.success) {
+      msgEl.style.color = '#10b981'
+      msgEl.textContent = '插件安装成功' + (r.version ? '（' + r.version + '）' : '') + '！请点击"扫码登录"连接微信。'
+    } else {
+      msgEl.style.color = '#f87171'
+      msgEl.textContent = '安装失败: ' + (r.error || '')
+    }
+  } catch (e) {
+    msgEl.style.color = '#f87171'
+    msgEl.textContent = '安装出错: ' + e.message
+  } finally {
+    setButtonBusy('wechatInstallBtn', false)
+  }
+}
+
+async function startWeixinScan() {
+  const msgEl = document.getElementById('chWechatMsg')
+  const qrEl = document.getElementById('wechatQrCode')
+  const statusEl = document.getElementById('wechatQrStatus')
+  msgEl.textContent = ''
+  statusEl.style.color = '#94a3b8'
+  statusEl.textContent = '正在启动微信登录...'
+  qrEl.innerHTML = '<div style="width:180px;height:180px;margin:0 auto;background:#1a1a2e;border-radius:8px;display:flex;align-items:center;justify-content:center"><svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="#4a4a6a" stroke-width="2" stroke-linecap="round" style="width:24px;height:24px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></div>'
+  setButtonBusy('wechatScanBtn', true, '启动中...')
+
+  try {
+    const dataDir = document.getElementById('chWechatDataDir').value.trim()
+    const r = await runWeixinCommand([
+      ['channels', 'login', '--channel', 'openclaw-weixin', '--json'],
+      ['channels', 'login', '--channel', 'openclaw-weixin'],
+      ['weixin', 'login', '--qr']
+    ])
+    const saveResult = await api.saveChannelConfig({
+      installDir: dashInfo?.installDir,
+      channelKey: 'openclaw-weixin',
+      config: { enabled: true, dataDir: dataDir || undefined }
+    })
+    if (!saveResult || !saveResult.success) {
+      statusEl.style.color = '#f87171'
+      statusEl.textContent = '配置保存失败: ' + (saveResult?.error || '当前环境不支持微信插件')
+      qrEl.innerHTML = '<div style="width:180px;height:180px;margin:0 auto;background:#1a1a2e;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#f87171;font-size:11px;padding:16px;text-align:center">插件配置未写入<br>请先确认插件已安装</div>'
+      return
+    }
+    const qr = extractWeixinQrPayload(r)
+    if (qr?.type === 'url') {
+      // 用 qrcode-generator 在本地生成二维码图片
+      try {
+        const qrGen = qrcode(0, 'M')
+        qrGen.addData(qr.value)
+        qrGen.make()
+        const qrImgTag = qrGen.createImgTag(4, 8)
+        qrEl.innerHTML = '<div style="background:#fff;border-radius:8px;padding:8px;display:inline-block">' + qrImgTag + '</div>'
+        qrEl.innerHTML += '<div style="margin-top:8px"><a href="#" onclick="api.openUrl(\'' + esc(qr.value) + '\');return false" style="color:#60a5fa;font-size:11px;text-decoration:underline">或点此在浏览器中打开扫码</a></div>'
+      } catch (qrErr) {
+        // QR 生成失败，提供链接兜底
+        qrEl.innerHTML = '<div style="width:180px;margin:0 auto;background:#1a1a2e;border-radius:8px;padding:16px;text-align:center"><a href="#" onclick="api.openUrl(\'' + esc(qr.value) + '\');return false" style="color:#60a5fa;font-size:12px;text-decoration:underline;word-break:break-all">点击此处在浏览器中打开扫码</a></div>'
+      }
+      statusEl.style.color = '#fbbf24'
+      statusEl.textContent = '请用微信扫描上方二维码'
+      pollWeixinStatus()
+    } else if (qr?.type === 'base64') {
+      qrEl.innerHTML = '<img src="data:image/png;base64,' + qr.value + '" style="width:180px;height:180px;border-radius:8px;image-rendering:pixelated" alt="微信扫码登录">'
+      statusEl.style.color = '#fbbf24'
+      statusEl.textContent = '请用微信扫描上方二维码'
+      pollWeixinStatus()
+    } else if (r.success) {
+      statusEl.style.color = '#fbbf24'
+      statusEl.textContent = '登录命令已启动，请按命令输出提示完成扫码'
+      qrEl.innerHTML = '<div style="width:180px;height:180px;margin:0 auto;background:#1a1a2e;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:11px;padding:16px;text-align:center">未解析到二维码<br>请查看安装目录中的命令输出或日志</div>'
+      pollWeixinStatus()
+    } else {
+      statusEl.style.color = '#f87171'
+      statusEl.textContent = '获取二维码失败: ' + (r.error || normalizeCommandOutput(r) || '请先安装插件')
+      qrEl.innerHTML = '<div style="width:180px;height:180px;margin:0 auto;background:#1a1a2e;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#f87171;font-size:11px;padding:16px;text-align:center">获取失败<br>请先点击"安装插件"</div>'
+    }
+  } catch (e) {
+    statusEl.style.color = '#f87171'
+    statusEl.textContent = '启动失败: ' + e.message
+    qrEl.innerHTML = '<div style="width:180px;height:180px;margin:0 auto;background:#1a1a2e;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#f87171;font-size:11px">出错了</div>'
+  } finally {
+    setButtonBusy('wechatScanBtn', false)
+  }
+}
+
+let weixinPollTimer = null
+async function pollWeixinStatus() {
+  if (weixinPollTimer) clearInterval(weixinPollTimer)
+  weixinPollTimer = setInterval(async () => {
+    try {
+      const r = await runWeixinCommand([
+        ['channels', 'list', '--json', '--no-usage'],
+        ['channels', 'status', '--json', '--probe'],
+        ['channels', 'list', '--no-usage'],
+        ['weixin', 'status']
+      ])
+      const statusEl = document.getElementById('wechatQrStatus')
+      if (looksLikeWeixinLoggedIn(r)) {
+        clearInterval(weixinPollTimer)
+        weixinPollTimer = null
+        statusEl.style.color = '#10b981'
+        statusEl.textContent = '已登录: ' + (r.nickname || r.name || '微信用户')
+        updateChannelStatusUI('wechat', true)
+        dashToast('微信登录成功！')
+      }
+    } catch (e) { /* ignore poll errors */ }
+  }, 3000)
+  // 5 分钟后停止轮询
+  setTimeout(() => { if (weixinPollTimer) { clearInterval(weixinPollTimer); weixinPollTimer = null; document.getElementById('wechatQrStatus').textContent = '二维码已过期，请重新扫码' } }, 300000)
+}
+
+async function saveChannel(ch) {
+  const def = CHANNEL_DEFS[ch]
+  if (!def) return
+  const data = getChannelFormData(ch)
+  const empty = Object.entries(data).filter(([k, v]) => !v)
+  if (empty.length > 0) {
+    setChannelMsg(ch, '请填写所有配置项', 'error')
+    return
+  }
+  setChannelMsg(ch, '正在保存...', 'info')
+  try {
+    const result = await api.saveChannelConfig({
+      installDir: dashInfo?.installDir,
+      channelKey: def.key,
+      config: { ...data, enabled: true }
+    })
+    if (result.success) {
+      updateChannelStatusUI(ch, true)
+      setChannelMsg(ch, '接入成功，请重启 Gateway 使配置生效', 'success')
+      dashToast(def.name + ' 接入成功')
+    } else {
+      setChannelMsg(ch, '接入失败: ' + (result.error || ''), 'error')
+    }
+  } catch (e) {
+    setChannelMsg(ch, '接入失败: ' + e.message, 'error')
+  }
+}
+
+async function testChannel(ch) {
+  const def = CHANNEL_DEFS[ch]
+  if (!def) return
+  const data = getChannelFormData(ch)
+  const empty = Object.entries(data).filter(([k, v]) => !v)
+  if (empty.length > 0) {
+    setChannelMsg(ch, '请先填写配置项', 'error')
+    return
+  }
+  setChannelMsg(ch, '正在测试连接...', 'info')
+  try {
+    const result = await api.testChannelConnection({
+      installDir: dashInfo?.installDir,
+      channelKey: def.key,
+      config: data
+    })
+    if (result.success) {
+      setChannelMsg(ch, '连接测试通过', 'success')
+    } else {
+      setChannelMsg(ch, '连接失败: ' + (result.error || ''), 'error')
+    }
+  } catch (e) {
+    setChannelMsg(ch, '连接失败: ' + e.message, 'error')
+  }
+}
+
+// Toast 提示函数
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div')
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'success' ? 'linear-gradient(135deg,#10b981,#059669)' : type === 'warning' ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)'};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    z-index: 10000;
+    animation: slideInRight 0.3s ease;
+    max-width: 400px;
+    word-wrap: break-word;
+  `
+  toast.textContent = message
+  document.body.appendChild(toast)
+  setTimeout(() => {
+    toast.style.animation = 'slideOutRight 0.3s ease'
+    setTimeout(() => toast.remove(), 300)
+  }, 4000)
+}
+
 </script>
 </body>
 </html>
