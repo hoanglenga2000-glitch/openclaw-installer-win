@@ -541,6 +541,7 @@ select option{background:var(--bg-card);color:var(--text-primary)}
 .check-item .ci-detail{font-size:11px;color:#64748b;margin-top:2px;line-height:1.4;word-break:break-word}
 </style>
 <link rel="stylesheet" href="new-styles.css">
+<link rel="stylesheet" href="assistant-ui-overrides.css">
 </head>
 <body>
 <div class="titlebar">
@@ -1974,13 +1975,18 @@ function renderProviderList() {
   }
   let html = ''
   for (const prov of configProviders) {
-    const preset = Object.values(PROVIDER_QUICK_PICKS).find(p => prov.name.toLowerCase().includes(Object.keys(PROVIDER_QUICK_PICKS).find(k => prov.name.toLowerCase().includes(k)) || '___'))
+    const key = Object.keys(PROVIDER_QUICK_PICKS).find(k => prov.name.toLowerCase().includes(k))
+    const preset = key ? PROVIDER_QUICK_PICKS[key] : null
     const color = preset?.color || '#6366f1'
     const maskedKey = prov.apiKey ? (prov.apiKey.substring(0, 6) + '...' + prov.apiKey.slice(-4)) : '未设置'
+    const modelCount = Array.isArray(prov.models) ? prov.models.length : 0
+    const protocolLabel = prov.api || 'openai-completions'
     html += '<div class="prov-item">'
     html += '<div class="prov-color" style="background:' + color + '"></div>'
-    html += '<div class="prov-name">' + esc(prov.name) + '</div>'
-    html += '<div class="prov-key">' + esc(maskedKey) + '</div>'
+    html += '<div class="prov-main">'
+    html += '<div class="prov-row-top"><div class="prov-name">' + esc(prov.name) + '</div><div class="prov-badge">已配置</div></div>'
+    html += '<div class="prov-meta"><span>' + esc(maskedKey) + '</span><span>·</span><span>' + modelCount + ' 个模型</span><span>·</span><span>' + esc(protocolLabel) + '</span></div>'
+    html += '</div>'
     html += '<div class="prov-actions">'
     html += '<button title="编辑" onclick="editProvider(\'' + esc(prov.name) + '\')"><svg viewBox="0 0 24 24" style="width:13px;height:13px" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'
     html += '<button class="del" title="删除" onclick="deleteProviderConfirm(\'' + esc(prov.name) + '\')"><svg viewBox="0 0 24 24" style="width:13px;height:13px" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>'
@@ -2333,13 +2339,21 @@ function updateChannelStatusUI(ch, connected) {
   const capCh = ch.charAt(0).toUpperCase() + ch.slice(1)
   const statusEl = document.getElementById('ch' + capCh + 'Status')
   const cardEl = document.getElementById('ch' + capCh)
+  const bodyEl = document.getElementById('ch' + capCh + 'Body')
+  let hasConfig = false
+  if (bodyEl) {
+    hasConfig = !!bodyEl.querySelector('input[value]:not([value=""])') || Array.from(bodyEl.querySelectorAll('input')).some(i => (i.value || '').trim())
+  }
+  const statusClass = connected ? 'on' : (hasConfig ? 'pending' : 'off')
+  const statusText = connected ? '已接入' : (hasConfig ? '待生效' : '未接入')
   if (statusEl) {
-    statusEl.className = 'channel-status ' + (connected ? 'on' : 'off')
-    statusEl.innerHTML = '<div class="channel-status-dot"></div>' + (connected ? '已接入' : '未接入')
+    statusEl.className = 'channel-status ' + statusClass
+    statusEl.innerHTML = '<div class="channel-status-dot"></div>' + statusText
   }
   if (cardEl) {
+    cardEl.classList.remove('connected', 'pending')
     if (connected) cardEl.classList.add('connected')
-    else cardEl.classList.remove('connected')
+    else if (hasConfig) cardEl.classList.add('pending')
   }
 }
 
