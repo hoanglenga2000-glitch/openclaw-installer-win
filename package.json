@@ -43,6 +43,10 @@
       {
         "from": "7za.exe",
         "to": "7za.exe"
+      },
+      {
+        "from": "bundled-plugins/openclaw-weixin-bundle.7z",
+        "to": "bundled-plugins/openclaw-weixin-bundle.7z"
       }
     ],
     "files": [

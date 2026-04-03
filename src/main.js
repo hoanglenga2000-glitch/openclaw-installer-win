@@ -7,6 +7,10 @@ const crypto = require('crypto')
 
 const APP_VERSION = '1.0.0'
 let mainWindow
+const gotSingleInstanceLock = app.requestSingleInstanceLock()
+if (!gotSingleInstanceLock) {
+  app.quit()
+}
 
 // Strip UTF-8 BOM before reading text files
 function readFileUtf8(filePath) {
@@ -117,7 +121,18 @@ function createWindow() {
   if (fs.existsSync(iconPath)) winOpts.icon = iconPath
   mainWindow = new BrowserWindow(winOpts)
   mainWindow.loadFile(path.join(__dirname, 'index.html'))
+  mainWindow.on('closed', () => { mainWindow = null })
 }
+
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
+    mainWindow.focus()
+  } else {
+    createWindow()
+  }
+})
 
 // ─── 文件权限加固 ───
 function secureFile(filePath) {
@@ -194,12 +209,34 @@ function findInstallInfo() {
 function checkGatewayRunning(port) {
   return new Promise((resolve) => {
     const http = require('http')
-    const req = http.get(`http://127.0.0.1:${port}`, (res) => {
-      res.resume()
-      resolve(true)
-    })
-    req.on('error', () => resolve(false))
-    req.setTimeout(3000, () => { req.destroy(); resolve(false) })
+    const candidates = [
+      `http://127.0.0.1:${port}/api/status`,
+      `http://127.0.0.1:${port}/`
+    ]
+    let i = 0
+
+    const tryNext = () => {
+      if (i >= candidates.length) return resolve(false)
+      const url = candidates[i++]
+      const req = http.get(url, (res) => {
+        let data = ''
+        res.on('data', chunk => { data += chunk })
+        res.on('end', () => {
+          if (url.endsWith('/api/status')) {
+            const ok = res.statusCode >= 200 && res.statusCode < 300 && !!parseJsonMaybe(data)
+            if (ok) return resolve(true)
+            return tryNext()
+          }
+          const ok = res.statusCode >= 200 && res.statusCode < 400
+          if (ok) return resolve(true)
+          return tryNext()
+        })
+      })
+      req.on('error', tryNext)
+      req.setTimeout(3000, () => { req.destroy(); tryNext() })
+    }
+
+    tryNext()
   })
 }
 
@@ -241,7 +278,7 @@ async function doStartGateway(installInfo) {
     await new Promise(r => setTimeout(r, 1500))
     if (await checkGatewayRunning(port)) return { success: true, alreadyRunning: false }
   }
-  return { success: false, error: 'Gateway 启动超时' }
+  return { success: false, error: 'OpenClaw 启动超时：进程可能已启动，但健康检查未通过', debugLog: logFile }
 }
 
 // ─── IPC: 检测安装 ───
@@ -290,21 +327,27 @@ ipcMain.handle('stop-gateway', async (event, port) => {
 ipcMain.handle('open-webchat', async (event, installInfoOverride) => {
   try {
     const info = installInfoOverride || findInstallInfo()
-    if (!info) return { success: false, error: '未找到安装信息' }
+    if (!info) return { success: false, error: '未找到安装信息', state: 'missing-install' }
     const port = info.port || 18789
-    const token = info.token || ''
 
-    // 确保 Gateway 运行
+    let state = 'already-running'
     if (!(await checkGatewayRunning(port))) {
+      state = 'starting'
       const result = await doStartGateway(info)
-      if (!result.success) return result
+      if (!result.success) return { ...result, state: 'start-failed' }
+      state = result.alreadyRunning ? 'already-running' : 'started'
+    }
+
+    const healthy = await checkGatewayRunning(port)
+    if (!healthy) {
+      return { success: false, error: 'Gateway 未就绪，请稍后重试', state: 'unhealthy' }
     }
 
     const url = `http://127.0.0.1:${port}/`
     shell.openExternal(url)
-    return { success: true, url }
+    return { success: true, url, state }
   } catch (e) {
-    return { success: false, error: e.message }
+    return { success: false, error: e.message, state: 'error' }
   }
 })
 
@@ -1119,8 +1162,15 @@ ipcMain.handle('diagnose-and-repair', async (event, installDir) => {
   return { success: true, checks, fixedCount }
 })
 
-app.whenReady().then(createWindow)
-app.on('window-all-closed', () => app.quit())
+app.whenReady().then(() => {
+  if (!mainWindow) createWindow()
+})
+app.on('window-all-closed', () => {
+  app.quit()
+})
+app.on('before-quit', () => {
+  mainWindow = null
+})
 
 // ─── Node 路径工具 ───
 function getNodeBinDir() {
@@ -1945,15 +1995,22 @@ ipcMain.on('start-install', async (event, { apiBase, apiKey, model, installDir, 
     }
     let gwPort = 18789
     if (!(await isPortFree(gwPort))) {
-      send('log', `端口 ${gwPort} 被占用，尝试清理旧进程...`)
-      writeInstallLog(`端口 ${gwPort} 被占用，尝试杀旧进程`)
-      killPortProcess(gwPort)
-      await new Promise(r => setTimeout(r, 1500))
-    }
-    for (let i = 0; i < 10; i++) {
-      if (await isPortFree(gwPort)) break
-      send('log', `端口 ${gwPort} 已被占用，尝试 ${gwPort + 1}...`)
-      gwPort++
+      send('log', `端口 ${gwPort} 已被占用，先检测是否已有可用 OpenClaw...`)
+      writeInstallLog(`端口 ${gwPort} 已被占用，优先检测现有服务是否可复用`)
+      const existingHealthy = await checkGatewayRunning(gwPort)
+      if (existingHealthy) {
+        send('log', `检测到端口 ${gwPort} 上已有可用 OpenClaw，直接复用该端口`)
+      } else {
+        send('log', `端口 ${gwPort} 被其他程序占用，自动尝试下一个可用端口...`)
+        for (let i = 1; i <= 20; i++) {
+          const candidate = gwPort + i
+          if (await isPortFree(candidate)) {
+            gwPort = candidate
+            send('log', `改用端口: ${gwPort}`)
+            break
+          }
+        }
+      }
     }
     send('log', `使用端口: ${gwPort}`)
 
@@ -1983,8 +2040,8 @@ ipcMain.on('start-install', async (event, { apiBase, apiKey, model, installDir, 
     proc.unref()
     fs.closeSync(logFd)
 
-    send('log', '等待服务就绪...')
-    await waitForGateway(gwPort, 20000)
+    send('log', '等待服务就绪（首次启动可能需要 1-2 分钟）...')
+    await waitForGateway(gwPort, 90000)
 
     try { createDesktopShortcut(token, gwPort); send('log', '已创建桌面快捷方式') } catch {}
     try { createAutoStart(ocPath, gwEnv, gwPort); send('log', '已设置开机自启') } catch {}
@@ -2072,7 +2129,7 @@ function waitForGateway(port, timeoutMs) {
         res.resume()
         resolve()
       }).on('error', () => {
-        if (Date.now() - start > timeoutMs) reject(new Error('Gateway 启动超时，请检查配置后重试'))
+        if (Date.now() - start > timeoutMs) reject(new Error('OpenClaw 启动超时：首次启动可能较慢，请稍后重试'))
         else setTimeout(check, 1500)
       })
     }
